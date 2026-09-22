@@ -1,0 +1,2003 @@
+:root {
+    /* ===== Couleurs ===== */
+    --stage: #121012;
+    --stage-deep: #060506;
+    --panel: #1c181a;
+    --paper: #efe6d6;
+    --ink: #f3efe8;
+    --muted: #948d84;
+    --line: #332d2c;
+
+    --common: #a29a8d;
+    --common-soft: #2a2622;
+
+    --rare: #35d3b6;
+    --rare-soft: #123330;
+
+    --legendaire: #e8b94d;
+    --legendaire-soft: #3a2c12;
+
+    /* ===== Typo ===== */
+    --font-display: 'Bebas Neue', 'Arial Narrow', sans-serif;
+    --font-body: 'Inter', Arial, Helvetica, sans-serif;
+    --font-mono: 'Space Mono', 'Courier New', monospace;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    min-height: 100vh;
+
+    font-family: var(--font-body);
+
+    background:
+        radial-gradient(circle at 50% 0%, var(--panel) 0%, var(--stage) 45%, var(--stage-deep) 100%);
+
+    color: var(--ink);
+}
+
+
+/* =========================
+   HEADER
+========================= */
+
+header {
+    text-align: center;
+    padding: 56px 20px 34px;
+}
+
+header .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--legendaire);
+    text-transform: uppercase;
+}
+
+header h1 {
+    margin-top: 10px;
+    font-family: var(--font-display);
+    font-size: 64px;
+    letter-spacing: 6px;
+    line-height: 1;
+}
+
+header .tagline {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 15px;
+}
+
+
+/* =========================
+   MAIN
+========================= */
+
+main {
+    width: min(1200px, 92%);
+    margin: auto;
+}
+
+
+/* =========================
+   PACK
+========================= */
+
+.pack-section {
+    min-height: 560px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 30px;
+}
+
+
+.pack-container {
+    position: relative;
+
+    width: min(820px, 100%);
+    height: 400px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+/* =========================
+   PLACEHOLDER — laissez-passer "backstage"
+========================= */
+
+.pack-placeholder {
+    position: relative;
+
+    width: 230px;
+    height: 340px;
+
+    border-radius: 18px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+
+    background:
+        linear-gradient(155deg, rgba(232, 185, 77, 0.10), transparent 40%),
+        linear-gradient(145deg, #221d1f, #141112);
+
+    border: 1px solid var(--line);
+
+    box-shadow: 0 24px 55px rgba(0, 0, 0, 0.55);
+
+    cursor: pointer;
+    user-select: none;
+
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.pack-placeholder:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 30px 65px rgba(0, 0, 0, 0.6);
+}
+
+.pack-clip {
+    position: absolute;
+    top: -14px;
+
+    width: 46px;
+    height: 20px;
+
+    border-radius: 6px;
+    background: linear-gradient(155deg, #b9b0a0, #7d766a);
+}
+
+.pack-hole {
+    width: 16px;
+    height: 16px;
+    margin-top: 14px;
+
+    border-radius: 50%;
+
+    background: var(--stage);
+    border: 1px solid var(--line);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.pack-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--legendaire);
+    text-transform: uppercase;
+}
+
+.pack-icon {
+    font-size: 70px;
+    line-height: 1;
+    color: var(--muted);
+
+    background: linear-gradient(160deg, var(--paper), var(--muted));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.pack-hint {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.pack-placeholder.shaking {
+    animation: shake 0.5s ease-in-out infinite;
+}
+
+
+/* =========================
+   BUTTON
+========================= */
+
+#open-pack-btn {
+    border: none;
+
+    padding: 17px 42px;
+
+    border-radius: 999px;
+
+    background: var(--paper);
+    color: #1a1512;
+
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+
+    cursor: pointer;
+
+    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+#open-pack-btn:hover {
+    transform: scale(1.04);
+    box-shadow: 0 0 34px rgba(232, 185, 77, 0.3);
+}
+
+#open-pack-btn:active {
+    transform: scale(0.98);
+}
+
+#open-pack-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+
+/* =========================
+   STATUS
+========================= */
+
+#status {
+    min-height: 20px;
+    color: var(--muted);
+    font-size: 14px;
+    text-align: center;
+}
+
+
+/* =========================
+   CARDS — pass laminé
+========================= */
+
+.card {
+    width: 190px;
+    min-height: 300px;
+
+    border-radius: 16px;
+
+    background: var(--panel);
+    border: 1px solid var(--line);
+
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+
+    overflow: hidden;
+}
+
+.card-content {
+    padding: 10px;
+}
+
+/* Carte statique dans la collection (pas d'effet 3D) */
+.collection-container .card {
+    opacity: 1;
+}
+
+/* --- Positionnement de l'éventail dans le pack --- */
+
+.pack-card {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+
+    width: 190px;
+    height: 300px;
+
+    perspective: 1400px;
+
+    transform:
+        translate(-50%, -50%)
+        translate(var(--offset-x, 0px), var(--offset-y, 0px))
+        rotate(var(--rotation, 0deg))
+        scale(var(--scale, 0.6));
+
+    opacity: var(--opacity, 0);
+
+    transition:
+        transform 0.6s cubic-bezier(0.22, 0.9, 0.32, 1),
+        opacity 0.35s ease;
+}
+
+.pack-card:nth-child(1) { --offset-x: -22px; --offset-y: 12px; --rotation: -4deg; }
+.pack-card:nth-child(2) { --offset-x: -11px; --offset-y: 6px; --rotation: -2deg; }
+.pack-card:nth-child(3) { --offset-x: 11px; --offset-y: 6px; --rotation: 2deg; }
+.pack-card:nth-child(4) { --offset-x: 22px; --offset-y: 12px; --rotation: 4deg; }
+
+.pack-card.in {
+    --scale: 1;
+    --opacity: 1;
+}
+
+.pack-card.flying-away {
+    pointer-events: none;
+    animation: card-fly-away 0.7s cubic-bezier(0.2, 0.8, 0.25, 1) forwards;
+}
+
+.pack-card:hover {
+    z-index: 999 !important;
+    transform:
+        translate(-50%, -55%)
+        translate(var(--offset-x, 0px), var(--offset-y, 0px))
+        rotate(var(--rotation, 0deg))
+        scale(1.06);
+}
+
+/* --- Flip 3D : face cachée / face visible --- */
+
+.card-flip {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.card-flip-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+
+    transform-style: preserve-3d;
+    transform: rotateY(180deg);
+
+    transition: transform 0.7s cubic-bezier(0.22, 0.9, 0.32, 1);
+}
+
+.pack-card.revealed .card-flip-inner {
+    transform: rotateY(0deg);
+}
+
+.card-face {
+    position: absolute;
+    inset: 0;
+
+    border-radius: 16px;
+    overflow: hidden;
+
+    background: var(--panel);
+    border: 1px solid var(--line);
+
+    backface-visibility: hidden;
+}
+
+.card-face::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    opacity: 0.2;
+    mix-blend-mode: soft-light;
+    background:
+        repeating-radial-gradient(
+            circle at 12% 18%,
+            rgba(255, 255, 255, 0.38) 0 0.7px,
+            transparent 0.8px 3px
+        ),
+        repeating-radial-gradient(
+            circle at 78% 64%,
+            rgba(0, 0, 0, 0.32) 0 0.8px,
+            transparent 0.9px 4px
+        );
+}
+
+.card-back {
+    transform: rotateY(180deg);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.1), transparent 40%),
+        #09060d;
+}
+
+.card-back::after {
+    content: "";
+    position: relative;
+    z-index: 9;
+    width: 50%;
+    aspect-ratio: 1;
+    background: url("asha-logo.png") center / contain no-repeat;
+    filter: drop-shadow(0 8px 12px rgba(111, 25, 173, 0.5));
+}
+
+.card-front {
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+}
+
+
+.card img {
+    width: 100%;
+    aspect-ratio: 1;
+
+    object-fit: cover;
+}
+
+
+.card-info {
+    padding: 12px 12px 14px;
+}
+
+
+.card-name {
+    font-size: 16px;
+    font-weight: 700;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+.card-artist {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+
+.rarity {
+    display: inline-block;
+
+    margin-top: 12px;
+
+    padding: 4px 10px;
+
+    border-radius: 4px;
+
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+
+    text-transform: uppercase;
+}
+
+
+/* =========================
+   RARETÉS
+========================= */
+
+.card.commun { border-color: var(--line); }
+.card.commun .card-front { border-top: 3px solid var(--common); }
+.card.commun .rarity { background: var(--common-soft); color: var(--common); }
+
+.card.rare {
+    border-color: rgba(53, 211, 182, 0.35);
+    box-shadow: 0 0 25px rgba(53, 211, 182, 0.18);
+}
+.card.rare .card-front { border-top: 3px solid var(--rare); }
+.card.rare .rarity { background: var(--rare-soft); color: var(--rare); }
+
+.card.legendaire {
+    border-color: rgba(232, 185, 77, 0.4);
+    box-shadow: 0 0 38px rgba(232, 185, 77, 0.28);
+}
+.card.legendaire .card-front { border-top: 3px solid var(--legendaire); }
+.card.legendaire .rarity { background: var(--legendaire-soft); color: var(--legendaire); }
+.card.legendaire .card-name {
+    background: linear-gradient(100deg, var(--ink) 30%, var(--legendaire) 50%, var(--ink) 70%);
+    background-size: 250% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: foil-sweep 3.5s linear infinite;
+}
+
+
+/* =========================
+   SPOTIFY
+========================= */
+
+.spotify-link {
+    display: inline-block;
+    margin-top: 10px;
+
+    color: var(--muted);
+    font-size: 12px;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+}
+
+.spotify-link:hover {
+    color: var(--ink);
+    border-bottom-color: var(--muted);
+}
+
+
+/* =========================================================
+   COLLECTION — CARTES PREMIUM
+   ========================================================= */
+
+.collection-container {
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fit, minmax(280px, 1fr));
+
+    gap: 22px;
+
+    width: 100%;
+}
+
+
+/* =========================================================
+   HITBOX PRINCIPALE
+   ========================================================= */
+
+.collection-card {
+    position: relative;
+
+    width: 100%;
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+
+    padding: 0;
+
+    border-radius: 16px;
+
+    background: var(--panel);
+
+    border: 1px solid var(--rarity-border, var(--line));
+
+    box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.32);
+
+    cursor: pointer;
+
+    /*
+       Toute la carte constitue maintenant
+       une seule vraie hitbox.
+    */
+    transition:
+        transform 0.22s cubic-bezier(0.22, 0.9, 0.32, 1),
+        box-shadow 0.22s ease,
+        border-color 0.22s ease;
+}
+
+
+/* =========================================================
+   HOVER GLOBAL
+   ========================================================= */
+
+.collection-card:hover {
+    transform: translateY(-6px) scale(1.015);
+
+    border-color:
+        var(--rarity-border-strong, var(--muted));
+
+    box-shadow:
+        0 18px 38px rgba(0, 0, 0, 0.48),
+        0 0 22px var(--rarity-inner-glow, transparent);
+}
+
+
+/* =========================================================
+   IMAGE
+   ========================================================= */
+
+.collection-card > img {
+    display: block;
+
+    width: 100%;
+    height: auto;
+
+    aspect-ratio: 1 / 1;
+
+    object-fit: cover;
+
+    margin: 0;
+
+    border: 0;
+    border-radius: 0;
+
+    flex-shrink: 0;
+}
+
+
+/* =========================================================
+   ZONE INFORMATIONS
+   ========================================================= */
+
+.collection-info {
+    position: relative;
+    isolation: isolate;
+
+    width: 100%;
+
+    flex: 1;
+
+    overflow: hidden;
+
+    margin: 0;
+
+    padding: 12px 13px 14px;
+
+    background:
+        radial-gradient(
+            ellipse at 18% 12%,
+            var(--rarity-light, transparent) 0%,
+            transparent 34%
+        ),
+
+        radial-gradient(
+            ellipse at 82% 88%,
+            var(--rarity-deep, transparent) 0%,
+            transparent 48%
+        ),
+
+        linear-gradient(
+            145deg,
+            var(--rarity-surface-1, var(--panel)),
+            var(--rarity-surface-2, var(--panel)) 52%,
+            var(--rarity-surface-3, var(--panel))
+        );
+
+    border-top:
+        1px solid
+        var(--rarity-border-strong, var(--line));
+}
+
+
+/* =========================================================
+   TEXTURE
+   ========================================================= */
+
+.collection-info::before {
+    content: "";
+
+    position: absolute;
+
+    inset: -35%;
+
+    z-index: -1;
+
+    pointer-events: none;
+
+    background:
+        repeating-radial-gradient(
+            ellipse at 20% 30%,
+
+            transparent 0px,
+            transparent 12px,
+
+            var(--rarity-texture, transparent) 13px,
+
+            transparent 15px,
+            transparent 28px
+        ),
+
+        repeating-linear-gradient(
+            125deg,
+
+            transparent 0px,
+            transparent 22px,
+
+            rgba(255,255,255,0.025) 23px,
+
+            transparent 25px
+        );
+
+    transform:
+        rotate(-8deg)
+        scale(1.25);
+
+    opacity:
+        var(--rarity-texture-opacity, 0.2);
+
+    mix-blend-mode: screen;
+}
+
+
+/* =========================================================
+   CONTENU AU-DESSUS DE LA TEXTURE
+   ========================================================= */
+
+.collection-info > * {
+    position: relative;
+
+    z-index: 2;
+}
+
+
+/* =========================================================
+   NOM
+   ========================================================= */
+
+.collection-info h3 {
+    margin: 0;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    line-height: 1.2;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+/* =========================================================
+   ARTISTE
+   ========================================================= */
+
+.collection-info p {
+    margin-top: 5px;
+
+    color: var(--muted);
+
+    font-size: 12px;
+
+    line-height: 1.25;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+/* =========================================================
+   BADGE RARETÉ
+   ========================================================= */
+
+.collection-info .rarity {
+    display: inline-flex;
+
+    align-items: center;
+
+    width: fit-content;
+
+    margin-top: 10px;
+
+    padding: 4px 8px;
+
+    border-radius: 4px;
+
+    font-family: var(--font-mono);
+
+    font-size: 9px;
+
+    font-weight: 700;
+
+    letter-spacing: 1px;
+
+    line-height: 1;
+
+    text-transform: uppercase;
+
+    background:
+        var(--rarity-soft, rgba(0,0,0,0.25));
+
+    color:
+        var(--rarity-border-strong, var(--ink));
+
+    border:
+        1px solid
+        var(--rarity-border-inner, var(--line));
+}
+
+
+/* =========================================================
+   LIGNE MÉTALLIQUE
+   ========================================================= */
+
+.collection-info::after {
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+    left: 12%;
+    right: 12%;
+
+    height: 1px;
+
+    pointer-events: none;
+
+    background:
+        linear-gradient(
+            90deg,
+
+            transparent,
+
+            var(--rarity-border-strong, var(--line)) 25%,
+
+            rgba(255,255,255,0.7) 50%,
+
+            var(--rarity-border-strong, var(--line)) 75%,
+
+            transparent
+        );
+
+    opacity: 0.65;
+}
+
+
+/* =========================================================
+   CONTOUR INTERNE
+   ========================================================= */
+
+.collection-card::before {
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    z-index: 10;
+
+    pointer-events: none;
+
+    border-radius: 15px;
+
+    border:
+        1px solid
+        var(--rarity-border-strong, transparent);
+
+    box-shadow:
+        inset 0 0 0 1px
+        var(--rarity-border-inner, transparent),
+
+        inset 0 0 18px
+        var(--rarity-inner-glow, transparent);
+
+    opacity: 0.75;
+
+    transition:
+        opacity 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+/* =========================================================
+   QUANTITÉ
+   ========================================================= */
+
+.quantity {
+    position: absolute;
+
+    top: 10px;
+    right: 10px;
+
+    z-index: 20;
+
+    min-width: 28px;
+    height: 28px;
+
+    padding: 0 7px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 999px;
+
+    background:
+        rgba(15, 13, 14, 0.88);
+
+    color: var(--ink);
+
+    border:
+        1px solid
+        var(--rarity-border-strong, var(--line));
+
+    box-shadow:
+        0 4px 12px rgba(0,0,0,0.35);
+
+    backdrop-filter: blur(6px);
+
+    font-family: var(--font-mono);
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    transition:
+        transform 0.2s ease,
+        background 0.2s ease;
+}
+
+
+/* =========================================================
+   QUANTITÉ AU HOVER
+   ========================================================= */
+
+.collection-card:hover .quantity {
+    transform: scale(1.08);
+
+    background:
+        rgba(20, 18, 19, 0.95);
+}
+
+
+/* =========================================================
+   RARE
+   ========================================================= */
+
+.collection-card.rare {
+    --rarity-soft: rgba(3, 48, 44, 0.72);
+}
+
+
+/* =========================================================
+   LÉGENDAIRE
+   ========================================================= */
+
+.collection-card.legendaire {
+    --rarity-soft: rgba(68, 42, 5, 0.72);
+}
+
+
+/* =========================================================
+   HOVER RARE
+   ========================================================= */
+
+.collection-card.rare:hover::before {
+    opacity: 1;
+
+    box-shadow:
+        inset 0 0 0 1px rgba(190,255,244,0.75),
+
+        inset 0 0 22px
+        rgba(53,211,182,0.14);
+}
+
+
+/* =========================================================
+   HOVER LÉGENDAIRE
+   ========================================================= */
+
+.collection-card.legendaire:hover::before {
+    opacity: 1;
+
+    box-shadow:
+        inset 0 0 0 1px rgba(255,247,196,0.9),
+
+        inset 0 0 24px
+        rgba(232,185,77,0.18);
+}
+
+
+/* =========================================================
+   LÉGENDAIRE — TITRE
+   ========================================================= */
+
+.collection-card.legendaire .collection-info h3 {
+    background:
+        linear-gradient(
+            100deg,
+
+            #fff8d0 20%,
+            #ffffff 38%,
+            #e8b94d 50%,
+            #ffffff 62%,
+            #fff8d0 80%
+        );
+
+    background-size: 220% 100%;
+
+    -webkit-background-clip: text;
+    background-clip: text;
+
+    color: transparent;
+
+    animation:
+        foil-sweep 3.2s linear infinite;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+    .collection-container {
+        grid-template-columns:
+            minmax(0, 1fr);
+
+        gap: 14px;
+    }
+
+    .collection-info {
+        padding:
+            10px 11px 12px;
+    }
+
+    .collection-info h3 {
+        font-size: 13px;
+    }
+
+    .collection-info p {
+        font-size: 11px;
+    }
+
+    .quantity {
+        top: 8px;
+        right: 8px;
+
+        min-width: 25px;
+        height: 25px;
+
+        font-size: 10px;
+    }
+}
+
+
+/* =========================
+   ANIMATIONS
+========================= */
+
+@keyframes shake {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25%      { transform: translateY(-2px) rotate(-1.5deg); }
+    75%      { transform: translateY(-2px) rotate(1.5deg); }
+}
+
+@keyframes foil-sweep {
+    0%   { background-position: 0% 0%; }
+    100% { background-position: -250% 0%; }
+}
+
+@keyframes rgb-shift {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
+
+@keyframes special-cover-sweep {
+    0% {
+        left: -55%;
+        opacity: 0;
+    }
+    18% {
+        opacity: 0.85;
+    }
+    52% {
+        opacity: 0.65;
+    }
+    82%, 100% {
+        left: 115%;
+        opacity: 0;
+    }
+}
+
+@keyframes card-fly-away {
+    0% {
+        transform: translate(-50%, -50%) translate(var(--offset-x, 0px), var(--offset-y, 0px)) rotate(var(--rotation, 0deg)) scale(1);
+        opacity: 1;
+    }
+    35% {
+        transform: translate(-50%, -95%) translate(8px, -80px) rotate(8deg) scale(1.04);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -180%) translate(55px, -180px) rotate(24deg) scale(0.8);
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pack-placeholder.shaking { animation: none; }
+    .card.legendaire .card-name { animation: none; }
+    .pack-card, .card-flip-inner, .pack-placeholder, .collection-card, #open-pack-btn {
+        transition-duration: 0.01ms !important;
+    }
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 700px) {
+
+    header h1 {
+        font-size: 40px;
+        letter-spacing: 3px;
+    }
+
+    .pack-section {
+        min-height: 480px;
+    }
+
+    .pack-container {
+        height: 340px;
+    }
+
+    .pack-card {
+        width: 150px;
+        height: 236px;
+    }
+
+    .card-name { font-size: 14px; }
+}
+
+/* =========================================================
+   RARETÉ — CARD SKIN / PREMIUM TCG
+   ---------------------------------------------------------
+   Inspiré du style de la référence :
+   • visuel en haut
+   • zone d'informations teintée par la rareté
+   • texture profonde
+   • bordure adaptée à la rareté
+   • reflet discret
+   • aucun gros halo extérieur
+========================================================= */
+
+/* ---------------------------------------------------------
+   STRUCTURE DE LA CARTE
+--------------------------------------------------------- */
+
+.pack-card {
+    position: absolute;
+    isolation: isolate;
+}
+
+.pack-card .card-front {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+
+    background: var(--panel);
+
+    border: 1px solid var(--rarity-border);
+    box-shadow:
+        0 18px 38px rgba(0, 0, 0, 0.52),
+        0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+/*
+   L'image devient la partie supérieure de la carte,
+   comme sur une vraie carte de collection.
+*/
+.pack-card .card-front > img,
+.pack-card .card-front > .card-image,
+.pack-card .card-front > .card-art {
+    flex: 0 0 54%;
+    width: 100%;
+    height: 54%;
+    aspect-ratio: auto;
+    object-fit: cover;
+}
+
+/*
+   Ton HTML actuel utilise normalement .card img.
+   Cette règle prend donc également l'image existante.
+*/
+.pack-card .card-front > img {
+    display: block;
+}
+
+
+/* ---------------------------------------------------------
+   ZONE D'INFOS = MATIÈRE DE LA CARTE
+--------------------------------------------------------- */
+
+.pack-card .card-info {
+    position: relative;
+    isolation: isolate;
+    flex: 1;
+
+    overflow: hidden;
+
+    padding: 12px 13px 13px;
+
+    background:
+        radial-gradient(
+            ellipse at 18% 12%,
+            var(--rarity-light) 0%,
+            transparent 34%
+        ),
+        radial-gradient(
+            ellipse at 82% 88%,
+            var(--rarity-deep) 0%,
+            transparent 48%
+        ),
+        linear-gradient(
+            145deg,
+            var(--rarity-surface-1),
+            var(--rarity-surface-2) 52%,
+            var(--rarity-surface-3)
+        );
+
+    border-top: 1px solid var(--rarity-border-strong);
+}
+
+/*
+   Texture organique / minérale.
+   Ça évite l'aspect "simple bloc de couleur".
+*/
+.pack-card .card-info::before {
+    content: "";
+    position: absolute;
+    inset: -35%;
+
+    pointer-events: none;
+    z-index: -1;
+
+    background:
+        repeating-radial-gradient(
+            ellipse at 20% 30%,
+            transparent 0px,
+            transparent 12px,
+            var(--rarity-texture) 13px,
+            transparent 15px,
+            transparent 28px
+        ),
+        repeating-linear-gradient(
+            125deg,
+            transparent 0px,
+            transparent 22px,
+            rgba(255,255,255,0.025) 23px,
+            transparent 25px
+        );
+
+    transform: rotate(-8deg) scale(1.25);
+    opacity: var(--rarity-texture-opacity);
+    mix-blend-mode: screen;
+}
+
+/*
+   Reflet très lent qui donne l'impression de matière
+   brillante sur les cartes rares.
+*/
+.pack-card .card-info::after {
+    content: "";
+    position: absolute;
+
+    top: -20%;
+    left: -80%;
+
+    width: 45%;
+    height: 160%;
+
+    pointer-events: none;
+    z-index: 0;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            var(--rarity-sheen),
+            transparent
+        );
+
+    transform: rotate(18deg);
+    opacity: 0;
+
+    animation: card-material-sheen 5s ease-in-out infinite;
+}
+
+
+/* Le contenu reste au-dessus des textures */
+.pack-card .card-info > * {
+    position: relative;
+    z-index: 2;
+}
+
+
+/* ---------------------------------------------------------
+   CONTOUR DE LA CARTE
+--------------------------------------------------------- */
+
+.pack-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+
+    pointer-events: none;
+    z-index: 5;
+
+    border-radius: 16px;
+    border: 1px solid var(--rarity-border-strong);
+
+    box-shadow:
+        inset 0 0 0 1px var(--rarity-border-inner),
+        inset 0 0 18px var(--rarity-inner-glow);
+
+    opacity: 1;
+}
+
+.pack-card::after {
+    content: "";
+    position: absolute;
+    inset: 5px;
+
+    pointer-events: none;
+    z-index: 6;
+
+    border-radius: 11px;
+    border: 1px solid var(--rarity-detail);
+
+    opacity: var(--rarity-detail-opacity);
+
+    box-shadow:
+        inset 0 0 14px var(--rarity-detail-glow);
+}
+
+
+/* ---------------------------------------------------------
+   COMMUNE — pierre / gris chaud
+--------------------------------------------------------- */
+
+.pack-card.commun,
+.collection-card.commun {
+    --rarity-border: rgba(162, 154, 141, 0.55);
+    --rarity-border-strong: rgba(207, 198, 183, 0.70);
+    --rarity-border-inner: rgba(255,255,255,0.10);
+
+    --rarity-light: rgba(220, 213, 200, 0.12);
+    --rarity-deep: rgba(120, 113, 102, 0.13);
+
+    --rarity-surface-1: #38342f;
+    --rarity-surface-2: #24211f;
+    --rarity-surface-3: #151414;
+
+    --rarity-texture: rgba(220, 213, 200, 0.08);
+    --rarity-texture-opacity: 0.35;
+
+    --rarity-sheen: rgba(255,255,255,0.16);
+
+    --rarity-inner-glow: rgba(200,190,170,0.04);
+    --rarity-detail: rgba(255,255,255,0.12);
+    --rarity-detail-glow: rgba(255,255,255,0.025);
+    --rarity-detail-opacity: 0.45;
+}
+
+.pack-card.commun .card-info,
+.collection-card.commun .collection-info {
+    color: var(--ink);
+}
+
+
+/* ---------------------------------------------------------
+   RARE — turquoise / métal froid
+--------------------------------------------------------- */
+
+.pack-card.rare,
+.collection-card.rare {
+    --rarity-border: rgba(53, 211, 182, 0.70);
+    --rarity-border-strong: rgba(119, 255, 226, 0.95);
+    --rarity-border-inner: rgba(173, 255, 240, 0.25);
+
+    --rarity-light: rgba(104, 255, 224, 0.28);
+    --rarity-deep: rgba(5, 102, 91, 0.36);
+
+    --rarity-surface-1: #176b61;
+    --rarity-surface-2: #0d4943;
+    --rarity-surface-3: #062d2b;
+
+    --rarity-texture: rgba(143, 255, 235, 0.15);
+    --rarity-texture-opacity: 0.55;
+
+    --rarity-sheen: rgba(196, 255, 246, 0.38);
+
+    --rarity-inner-glow: rgba(53,211,182,0.12);
+    --rarity-detail: rgba(177,255,240,0.55);
+    --rarity-detail-glow: rgba(53,211,182,0.08);
+    --rarity-detail-opacity: 0.8;
+}
+
+.pack-card.rare .card-info,
+.collection-card.rare .collection-info {
+    color: #f1fffc;
+}
+
+
+/* ---------------------------------------------------------
+   LÉGENDAIRE — or / métal précieux
+--------------------------------------------------------- */
+
+.pack-card.legendaire,
+.collection-card.legendaire {
+    --rarity-border: rgba(232, 185, 77, 0.78);
+    --rarity-border-strong: rgba(255, 225, 125, 1);
+    --rarity-border-inner: rgba(255, 244, 186, 0.32);
+
+    --rarity-light: rgba(255, 231, 133, 0.34);
+    --rarity-deep: rgba(129, 79, 8, 0.38);
+
+    --rarity-surface-1: #9a721d;
+    --rarity-surface-2: #68490f;
+    --rarity-surface-3: #362306;
+
+    --rarity-texture: rgba(255, 235, 153, 0.17);
+    --rarity-texture-opacity: 0.68;
+
+    --rarity-sheen: rgba(255, 247, 193, 0.52);
+
+    --rarity-inner-glow: rgba(232,185,77,0.17);
+    --rarity-detail: rgba(255,241,168,0.70);
+    --rarity-detail-glow: rgba(255,211,81,0.12);
+    --rarity-detail-opacity: 0.95;
+}
+
+.pack-card.legendaire .card-info,
+.collection-card.legendaire .collection-info {
+    color: #fff9df;
+
+    background:
+        radial-gradient(
+            ellipse at 15% 10%,
+            rgba(255,245,184,0.34),
+            transparent 35%
+        ),
+        radial-gradient(
+            ellipse at 85% 90%,
+            rgba(107,59,3,0.45),
+            transparent 50%
+        ),
+        linear-gradient(
+            145deg,
+            #b28a2d,
+            #795615 50%,
+            #3b2507
+        );
+}
+
+
+/* ---------------------------------------------------------
+   NOM / ARTISTE / RARETÉ
+--------------------------------------------------------- */
+
+.pack-card.rare .card-name {
+    color: #f5fffd;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.25);
+}
+
+.collection-card.rare .collection-info h3 {
+    color: #f5fffd;
+}
+
+.pack-card.legendaire .card-name {
+    color: #fffbe8;
+
+    background:
+        linear-gradient(
+            100deg,
+            #fff8d0 20%,
+            #ffffff 38%,
+            #e8b94d 50%,
+            #ffffff 62%,
+            #fff8d0 80%
+        );
+
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+
+    animation: foil-sweep 3.2s linear infinite;
+}
+
+.collection-card.legendaire .collection-info h3 {
+    color: #fffbe8;
+}
+
+.pack-card.rare .card-artist,
+.pack-card.legendaire .card-artist,
+.collection-card.rare .collection-info p,
+.collection-card.legendaire .collection-info p {
+    color: rgba(255,255,255,0.72);
+}
+
+.pack-card.rare .rarity {
+    background: rgba(3, 48, 44, 0.62);
+    color: #9effed;
+    border: 1px solid rgba(142,255,235,0.35);
+}
+
+.collection-card.rare .rarity {
+    background: rgba(3, 48, 44, 0.62);
+    color: #9effed;
+    border: 1px solid rgba(142,255,235,0.35);
+}
+
+.pack-card.legendaire .rarity {
+    background: rgba(68, 42, 5, 0.68);
+    color: #ffe89a;
+    border: 1px solid rgba(255,231,143,0.45);
+}
+
+.collection-card.legendaire .rarity {
+    background: rgba(68, 42, 5, 0.68);
+    color: #ffe89a;
+    border: 1px solid rgba(255,231,143,0.45);
+}
+
+
+/* ---------------------------------------------------------
+   PETITE LIGNE MÉTALLIQUE ENTRE L'IMAGE ET LES INFOS
+--------------------------------------------------------- */
+
+.pack-card.rare .card-front::after,
+.pack-card.legendaire .card-front::after {
+    content: "";
+    position: absolute;
+
+    left: 0;
+    right: 0;
+    top: 54%;
+
+    height: 2px;
+
+    z-index: 20;
+    pointer-events: none;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            var(--rarity-border-strong) 20%,
+            #ffffff 50%,
+            var(--rarity-border-strong) 80%,
+            transparent
+        );
+
+    opacity: 0.75;
+}
+
+.pack-card.legendaire .card-front::after {
+    height: 3px;
+    opacity: 0.9;
+}
+
+
+/* ---------------------------------------------------------
+   HOVER
+--------------------------------------------------------- */
+
+.pack-card.rare:hover::before {
+    box-shadow:
+        inset 0 0 0 1px rgba(190,255,244,0.75),
+        inset 0 0 20px rgba(53,211,182,0.17);
+}
+
+.pack-card.legendaire:hover::before {
+    box-shadow:
+        inset 0 0 0 1px rgba(255,247,196,0.95),
+        inset 0 0 24px rgba(232,185,77,0.22);
+}
+
+.pack-card:hover .card-info::after {
+    opacity: 1;
+}
+
+
+/* ---------------------------------------------------------
+   EPIQUE — rouge intense
+--------------------------------------------------------- */
+
+.pack-card.epique,
+.collection-card.epique {
+    --rarity-border: rgba(239, 68, 68, 0.78);
+    --rarity-border-strong: rgba(255, 126, 126, 0.98);
+    --rarity-border-inner: rgba(255, 190, 190, 0.28);
+    --rarity-light: rgba(255, 93, 93, 0.3);
+    --rarity-deep: rgba(120, 12, 18, 0.42);
+    --rarity-surface-1: #8f2026;
+    --rarity-surface-2: #5b1219;
+    --rarity-surface-3: #2d080d;
+    --rarity-texture: rgba(255, 168, 168, 0.16);
+    --rarity-texture-opacity: 0.62;
+    --rarity-sheen: rgba(255, 220, 220, 0.45);
+    --rarity-inner-glow: rgba(239, 68, 68, 0.16);
+    --rarity-detail: rgba(255, 196, 196, 0.62);
+    --rarity-detail-glow: rgba(255, 65, 65, 0.12);
+    --rarity-detail-opacity: 0.9;
+}
+
+.pack-card.epique .card-info,
+.collection-card.epique .collection-info {
+    color: #fff1f1;
+}
+
+.pack-card.epique .rarity,
+.collection-card.epique .rarity {
+    background: rgba(92, 10, 16, 0.7);
+    color: #ffb0b0;
+    border: 1px solid rgba(255, 157, 157, 0.48);
+}
+
+
+/* ---------------------------------------------------------
+   SPECIAL — prisme RGB
+--------------------------------------------------------- */
+
+.pack-card.special,
+.collection-card.special {
+    --rarity-border: rgba(255, 255, 255, 0.82);
+    --rarity-border-strong: rgba(255, 255, 255, 0.98);
+    --rarity-border-inner: rgba(255, 255, 255, 0.35);
+    --rarity-light: rgba(255, 255, 255, 0.26);
+    --rarity-deep: rgba(255, 0, 150, 0.26);
+    --rarity-surface-1: #ff315d;
+    --rarity-surface-2: #722cff;
+    --rarity-surface-3: #00bde8;
+    --rarity-texture: rgba(255, 255, 255, 0.25);
+    --rarity-texture-opacity: 0.7;
+    --rarity-sheen: rgba(255, 255, 255, 0.7);
+    --rarity-inner-glow: rgba(255, 255, 255, 0.22);
+    --rarity-detail: rgba(255, 255, 255, 0.8);
+    --rarity-detail-glow: rgba(255, 255, 255, 0.18);
+    --rarity-detail-opacity: 0.95;
+}
+
+.pack-card.special .card-info,
+.collection-card.special .collection-info {
+    color: #ffffff;
+    background:
+        linear-gradient(135deg, #ff315d 0%, #ff9f1c 22%, #f4e942 40%, #39d353 57%, #00bde8 76%, #722cff 100%);
+    background-size: 180% 180%;
+    animation: rgb-shift 5s ease-in-out infinite alternate;
+}
+
+.pack-card.special .card-front::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -55%;
+    z-index: 4;
+    width: 42%;
+    height: 54%;
+    pointer-events: none;
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 49, 93, 0.2) 18%,
+            rgba(255, 240, 66, 0.72) 42%,
+            rgba(0, 232, 216, 0.82) 58%,
+            rgba(114, 44, 255, 0.28) 82%,
+            transparent
+        );
+    mix-blend-mode: screen;
+    transform: skewX(-12deg);
+    animation: special-cover-sweep 3.8s ease-in-out infinite;
+}
+
+.pack-card.special .rarity,
+.collection-card.special .rarity {
+    background: rgba(20, 10, 38, 0.66);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+}
+
+
+/* ---------------------------------------------------------
+   EXCLU — rouge, titre noir orne de rouge
+--------------------------------------------------------- */
+
+.pack-card.exclu,
+.collection-card.exclu {
+    --rarity-border: rgba(190, 20, 32, 0.92);
+    --rarity-border-strong: rgba(255, 68, 78, 1);
+    --rarity-border-inner: rgba(255, 130, 130, 0.38);
+    --rarity-light: rgba(255, 42, 53, 0.3);
+    --rarity-deep: rgba(70, 0, 6, 0.5);
+    --rarity-surface-1: #701018;
+    --rarity-surface-2: #3d080d;
+    --rarity-surface-3: #160205;
+    --rarity-texture: rgba(255, 83, 91, 0.2);
+    --rarity-texture-opacity: 0.68;
+    --rarity-sheen: rgba(255, 160, 160, 0.5);
+    --rarity-inner-glow: rgba(255, 24, 36, 0.2);
+    --rarity-detail: rgba(255, 106, 106, 0.8);
+    --rarity-detail-glow: rgba(255, 0, 12, 0.18);
+    --rarity-detail-opacity: 1;
+}
+
+.pack-card.exclu .card-info,
+.collection-card.exclu .collection-info {
+    color: #fff5f5;
+}
+
+.pack-card.exclu .card-name,
+.collection-card.exclu .collection-info h3 {
+    color: #ff2638;
+    text-shadow:
+        1px 0 0 #160205,
+        -1px 0 0 #160205,
+        0 1px 0 #160205,
+        0 -1px 0 #160205,
+        0 0 10px rgba(255, 20, 38, 0.75);
+    border-bottom: 2px solid #e31d2b;
+    padding-bottom: 2px;
+}
+
+.pack-card.exclu .card-front::after {
+    display: none;
+    animation: none;
+}
+
+.pack-card.exclu .rarity,
+.collection-card.exclu .rarity {
+    background: #3b050a;
+    color: #ff9da3;
+    border: 1px solid #ff4b55;
+}
+
+
+/* ---------------------------------------------------------
+   ANIMATION FOIL
+--------------------------------------------------------- */
+
+@keyframes card-material-sheen {
+    0% {
+        left: -80%;
+        opacity: 0;
+    }
+
+    15% {
+        opacity: 0;
+    }
+
+    35% {
+        opacity: 0.8;
+    }
+
+    55% {
+        left: 135%;
+        opacity: 0;
+    }
+
+    100% {
+        left: 135%;
+        opacity: 0;
+    }
+}
+
+
+/* ---------------------------------------------------------
+   MOBILE
+--------------------------------------------------------- */
+
+@media (max-width: 700px) {
+    .pack-card .card-front > img {
+        flex-basis: 54%;
+        height: 54%;
+    }
+}
+
+
+/* ---------------------------------------------------------
+   RÉDUCTION DES ANIMATIONS
+--------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+    .pack-card .card-info::after,
+    .pack-card.legendaire .card-name {
+        animation: none;
+    }
+}
+
+/* =========================================================
+   ITEM SHOP
+========================================================= */
+
+.topbar {
+    width: min(1200px, 92%);
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.topbar .eyebrow {
+    margin: 0;
+}
+
+.points-display {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    border: 1px solid rgba(232, 185, 77, 0.55);
+    background: rgba(25, 21, 20, 0.9);
+    color: var(--paper);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+}
+
+.points-display strong {
+    color: #ffe18a;
+    font-size: 15px;
+}
+
+.points-icon {
+    color: #ffe18a;
+    font-size: 15px;
+}
+
+.shop-section {
+    padding: 28px 0 18px;
+}
+
+.shop-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 18px;
+}
+
+.section-kicker {
+    color: var(--legendaire);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+}
+
+.shop-heading h2 {
+    margin-top: 5px;
+    font-family: var(--font-display);
+    font-size: 34px;
+    letter-spacing: 1px;
+}
+
+.shop-timer {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+}
+
+.booster-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.booster-card {
+    --booster-accent: #b77dff;
+    position: relative;
+    overflow: hidden;
+    background: #1b171a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 16px 35px rgba(0, 0, 0, 0.35);
+    animation: shop-reveal 0.55s ease both;
+    animation-delay: var(--delay);
+}
+
+.booster-card.cyan { --booster-accent: #47e2d0; }
+.booster-card.gold { --booster-accent: #f1c45d; }
+
+.booster-art {
+    position: relative;
+    height: 190px;
+    overflow: hidden;
+    background: #100d12;
+}
+
+.booster-art::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--booster-accent), transparent 42%, rgba(0, 0, 0, 0.75));
+    mix-blend-mode: screen;
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+.booster-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.78;
+    filter: saturate(1.25) contrast(1.08);
+}
+
+.booster-card.violet .booster-art img {
+    object-fit: contain;
+    padding: 35px;
+}
+
+.booster-stamp,
+.booster-count {
+    position: absolute;
+    z-index: 2;
+    top: 12px;
+    padding: 5px 7px;
+    color: #fff;
+    background: rgba(10, 8, 11, 0.75);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 1px;
+}
+
+.booster-stamp { left: 12px; }
+.booster-count { right: 12px; color: var(--booster-accent); }
+
+.booster-count {
+    max-width: 45%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.booster-copy {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 15px;
+    border-top: 2px solid var(--booster-accent);
+}
+
+.booster-copy h3 {
+    font-size: 16px;
+    line-height: 1.1;
+}
+
+.booster-copy p {
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.buy-booster {
+    flex-shrink: 0;
+    display: grid;
+    gap: 4px;
+    padding: 9px 11px;
+    border: 1px solid var(--booster-accent);
+    background: transparent;
+    color: var(--paper);
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.buy-booster strong {
+    color: var(--booster-accent);
+    font-size: 10px;
+}
+
+.buy-booster:hover {
+    background: var(--booster-accent);
+    color: #171218;
+    transform: translateY(-2px);
+}
+
+.buy-booster:hover strong { color: #171218; }
+.buy-booster:disabled { opacity: 0.45; cursor: wait; transform: none; }
+
+@keyframes shop-reveal {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 850px) {
+    .booster-grid { grid-template-columns: 1fr; }
+    .booster-art { height: 150px; }
+}
+
+@media (max-width: 560px) {
+    .topbar,
+    .shop-heading { align-items: flex-start; flex-direction: column; }
+    .topbar { gap: 12px; }
+    .points-display { align-self: flex-end; }
+    .shop-heading h2 { font-size: 29px; }
+    .booster-copy { align-items: flex-start; flex-direction: column; }
+    .buy-booster { width: 100%; }
+}

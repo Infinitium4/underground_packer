@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Pack Opener</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header>
+        <div class="topbar">
+            <p class="eyebrow">ASHΛ // ITEM SHOP</p>
+            <div class="points-display">
+                <span class="points-icon">◆</span>
+                <strong id="points-value">1 200</strong>
+                <span>PTS</span>
+            </div>
+        </div>
+        <h1>BOOSTER SHOP</h1>
+        <p class="tagline">Choisis ton prochain drop.</p>
+    </header>
+
+
+    <main>
+
+        <section class="shop-section" aria-labelledby="shop-title">
+            <div class="shop-heading">
+                <div>
+                    <p class="section-kicker">BOUTIQUE</p>
+                    <h2 id="shop-title">Cartes disponibles</h2>
+                </div>
+                <span class="shop-timer">STOCK DE CARTES // AUJOURD'HUI</span>
+            </div>
+
+            <div id="booster-shop" class="booster-grid"></div>
+        </section>
+
+        <section class="pack-section">
+
+            <div id="pack-container" class="pack-container">
+                <div class="pack-placeholder">
+                    <span class="pack-clip"></span>
+                    <span class="pack-hole"></span>
+                    <p class="pack-label">All Access</p>
+                    <span class="pack-icon">♪</span>
+                    <p class="pack-hint">Ouvre un pack</p>
+                </div>
+            </div>
+
+            <button id="open-pack-btn" type="button">
+                OUVRIR UN BOOSTER
+            </button>
+
+            <p id="status"></p>
+
+        </section>
+
+
+        <section class="collection-section">
+
+            <div class="section-title">
+                <h2>Collection</h2>
+
+                <button id="refresh-collection">
+                    Actualiser
+                </button>
+            </div>
+
+            <div id="collection-container" class="collection-container">
+                <p class="empty">
+                    Aucune carte dans ta collection.
+                </p>
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <script src="script.js"></script>
+
+</body>
+</html>
