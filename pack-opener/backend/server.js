@@ -3,6 +3,9 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
+const db = require('./db');
 
 const app = express();
 
@@ -10,6 +13,27 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+
+const createSession = async (userId) => {
+    const token = crypto.randomBytes(32).toString('hex');
+    await db.run('INSERT INTO sessions (token, user_id) VALUES (?, ?)', [token, userId]);
+    return token;
+};
+
+const requireUser = async (req, res, next) => {
+    const token = req.get('Authorization')?.replace('Bearer ', '');
+    const session = token
+        ? await db.get('SELECT user_id FROM sessions WHERE token = ?', [token])
+        : null;
+
+    if (!session) {
+        return res.status(401).json({ success: false, error: 'Connexion requise' });
+    }
+
+    req.userId = session.user_id;
+    req.sessionToken = token;
+    next();
+};
 
 app.use(
     express.static(
@@ -31,11 +55,23 @@ app.get('/app', (req, res) => {
 // ==========================
 
 const ARTIST_NAMES = [
+    'Rêves',
+    'coeurco',
+    '888rks',
+    'Sim01',
+    'Videuu',
+    'Wakes',
+    'Shooda',
     'ezasha',
     'Lunias',
-    'coeurco',
+    'Ptite Soeur',
 
 ];
+
+const ARTIST_SPOTIFY_IDS = {
+    Shooda: '09yFOPej2iAOrLFZgdv7cv',
+    Guizy: '6oEHU1tnDAAeZna1pU0Nnq',
+};
 
 const RARITY_WEIGHTS = [
     {
@@ -71,13 +107,6 @@ const PACK_SIZE = 5;
 // ==========================
 
 let cardPool = [];
-
-// ==========================
-// COLLECTION
-// ==========================
-
-// Collection temporaire en mémoire
-let collection = [];
 
 // ==========================
 // SPOTIFY
@@ -134,7 +163,8 @@ const getToken = async () => {
 
 const searchArtistTracks = async (
     token,
-    artistName
+    artistName,
+    artistSpotifyId
 ) => {
 
     const allTracks = [];
@@ -203,12 +233,11 @@ const searchArtistTracks = async (
 
             const isArtist =
                 track.artists?.some(
-                    (artist) =>
-                        artist.name
+                    (artist) => artistSpotifyId
+                        ? artist.id === artistSpotifyId
+                        : artist.name
                             .toLowerCase()
-                            ===
-                        artistName
-                            .toLowerCase()
+                            === artistName.toLowerCase()
                 );
 
             if (isArtist) {
@@ -352,39 +381,46 @@ const openPack = (
 };
 
 // ==========================
-// AJOUT À LA COLLECTION
+// PERSISTANCE DES SONS
 // ==========================
 
-const addToCollection = (
-    pack
-) => {
+const saveCardAndCollect = async (userId, card) => {
+    await db.run(
+        `INSERT INTO sounds (spotify_id, name, artist, cover_url, spotify_url, preview_url)
+         VALUES (?, ?, ?, ?, ?, ?)
+         ON CONFLICT(spotify_id) DO UPDATE SET
+            name = excluded.name,
+            artist = excluded.artist,
+            cover_url = excluded.cover_url,
+            spotify_url = excluded.spotify_url,
+            preview_url = excluded.preview_url`,
+        [card.id, card.name, card.artist, card.cover, card.spotifyUrl, card.previewUrl]
+    );
 
-    for (
-        const card of pack
-    ) {
+    const sound = await db.get('SELECT * FROM sounds WHERE spotify_id = ?', [card.id]);
+    await db.run(
+        `INSERT INTO sound_variants (sound_id, rarity)
+         VALUES (?, ?)
+         ON CONFLICT(sound_id) DO NOTHING`,
+        [sound.id, card.rarity]
+    );
 
-        // Chaque exemplaire reste une carte indépendante.
-        collection.push({
+    const variant = await db.get('SELECT * FROM sound_variants WHERE sound_id = ?', [sound.id]);
+    await db.run(
+        `INSERT INTO collection_items (user_id, sound_id, variant_id, quantity)
+         VALUES (?, ?, ?, 1)
+         ON CONFLICT(user_id, sound_id) DO UPDATE SET quantity = quantity + 1`,
+        [userId, sound.id, variant.id]
+    );
 
-            id: card.id,
+    return {
+        ...card,
+        rarity: variant.rarity,
+    };
+};
 
-            name: card.name,
-
-            artist: card.artist,
-
-            cover: card.cover,
-
-            rarity: card.rarity,
-
-            spotifyUrl:
-                card.spotifyUrl,
-
-            previewUrl:
-                card.previewUrl,
-
-            quantity: 1,
-        });
-    }
+const savePackToCollection = async (userId, pack) => {
+    return Promise.all(pack.map((card) => saveCardAndCollect(userId, card)));
 };
 
 // ==========================
@@ -415,7 +451,8 @@ const buildCardPool =
             const tracks =
                 await searchArtistTracks(
                     token,
-                    artistName
+                    artistName,
+                    ARTIST_SPOTIFY_IDS[artistName]
                 );
 
             allTracks.push(
@@ -471,6 +508,62 @@ app.get(
         });
     }
 );
+
+app.post('/api/auth/register', async (req, res) => {
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const password = String(req.body?.password || '');
+
+    if (!email || password.length < 6) {
+        return res.status(400).json({
+            success: false,
+            error: 'Indique un email et un mot de passe de 6 caractères minimum',
+        });
+    }
+
+    try {
+        const passwordHash = await bcrypt.hash(password, 10);
+        const result = await db.run(
+            'INSERT INTO users (email, password_hash) VALUES (?, ?)',
+            [email, passwordHash]
+        );
+        const token = await createSession(result.id);
+        return res.status(201).json({ success: true, token, email });
+    } catch (error) {
+        if (error.message.includes('UNIQUE')) {
+            return res.status(409).json({ success: false, error: 'Cet email existe déjà' });
+        }
+        console.error('Erreur inscription :', error);
+        return res.status(500).json({ success: false, error: 'Inscription impossible' });
+    }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const password = String(req.body?.password || '');
+    const user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
+
+    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+        return res.status(401).json({ success: false, error: 'Email ou mot de passe incorrect' });
+    }
+
+    return res.json({
+        success: true,
+        token: await createSession(user.id),
+        email: user.email,
+        points: user.points,
+    });
+});
+
+app.get('/api/auth/me', requireUser, async (req, res) => {
+    const user = await db.get('SELECT id, email, points FROM users WHERE id = ?', [req.userId]);
+    res.json({ success: true, user });
+});
+
+app.post('/api/auth/logout', requireUser, (req, res) => {
+    db.run('DELETE FROM sessions WHERE token = ?', [req.sessionToken])
+        .then(() => res.json({ success: true }))
+        .catch(() => res.status(500).json({ success: false, error: 'Déconnexion impossible' }));
+});
 
 // ==========================
 // TOUTES LES CARTES
@@ -628,7 +721,8 @@ app.get(
 
 app.post(
     '/api/pack/open',
-    (req, res) => {
+    requireUser,
+    async (req, res) => {
 
         try {
 
@@ -655,15 +749,13 @@ app.post(
 
             // Ajouter les cartes
             // à la collection
-            addToCollection(
-                pack
-            );
+            const savedPack = await savePackToCollection(req.userId, pack);
 
             res.json({
 
                 success: true,
 
-                pack,
+                pack: savedPack,
             });
 
         } catch (error) {
@@ -690,7 +782,8 @@ app.post(
 
 app.post(
     '/api/cards/purchase',
-    (req, res) => {
+    requireUser,
+    async (req, res) => {
 
         const cardId = String(req.body?.id || '');
         const track = cardPool.find((item) => String(item.id) === cardId);
@@ -702,12 +795,26 @@ app.post(
             });
         }
 
-        const card = openPack([track], 1)[0];
-        addToCollection([card]);
+        const price = 150 + (cardPool.indexOf(track) % 5) * 100;
+        const user = await db.get('SELECT points FROM users WHERE id = ?', [req.userId]);
+
+        if (user.points < price) {
+            return res.status(400).json({
+                success: false,
+                error: 'Pas assez de points pour cette carte',
+            });
+        }
+
+        const card = (await db.transaction(async () => {
+            await db.run('UPDATE users SET points = points - ? WHERE id = ?', [price, req.userId]);
+            return savePackToCollection(req.userId, openPack([track], 1));
+        }))[0];
+        const updatedUser = await db.get('SELECT points FROM users WHERE id = ?', [req.userId]);
 
         return res.json({
             success: true,
             card,
+            points: updatedUser.points,
         });
     }
 );
@@ -718,15 +825,24 @@ app.post(
 
 app.get(
     '/api/collection',
-    (req, res) => {
+    requireUser,
+    async (req, res) => {
+        const collection = await db.all(
+            `SELECT sounds.spotify_id AS id, sounds.name, sounds.artist,
+                    sounds.cover_url AS cover, variants.rarity,
+                    sounds.spotify_url AS spotifyUrl, sounds.preview_url AS previewUrl,
+                    collection_items.quantity
+             FROM collection_items
+             JOIN sounds ON sounds.id = collection_items.sound_id
+             JOIN sound_variants AS variants ON variants.id = collection_items.variant_id
+             WHERE collection_items.user_id = ?
+             ORDER BY variants.rarity DESC, sounds.name ASC`,
+            [req.userId]
+        );
 
         res.json({
-
             success: true,
-
-            count:
-                collection.length,
-
+            count: collection.length,
             collection,
         });
     }

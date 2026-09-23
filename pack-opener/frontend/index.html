@@ -20,18 +20,43 @@
             <p class="eyebrow">ASHΛ // ITEM SHOP</p>
             <div class="points-display">
                 <span class="points-icon">◆</span>
-                <strong id="points-value">1 200</strong>
+                <strong id="points-value">10000000 200</strong>
                 <span>PTS</span>
             </div>
+            <div id="profile-menu" class="profile-menu" hidden>
+                <span id="profile-email"></span>
+                <button id="profile-logout" type="button" aria-label="Se déconnecter">↪</button>
+            </div>
         </div>
-        <h1>BOOSTER SHOP</h1>
-        <p class="tagline">Choisis ton prochain drop.</p>
+        <h1 id="page-title">OUVRIR DES PACKS</h1>
+        <p id="page-tagline" class="tagline">Révèle les cartes de ton prochain drop.</p>
+
+        <nav class="main-navigation" aria-label="Navigation principale">
+            <button class="nav-button active" type="button" data-view="packs">Ouvrir des packs</button>
+            <button class="nav-button" type="button" data-view="shop">Boutique</button>
+            <button class="nav-button" type="button" data-view="collection">Collection</button>
+        </nav>
+
+        <section id="account-panel" class="account-panel" aria-labelledby="account-title">
+            <div>
+                <p class="section-kicker">COMPTE</p>
+                <h2 id="account-title">Sauvegarde ta collection</h2>
+            </div>
+            <form id="auth-form">
+                <input id="auth-email" type="email" placeholder="Email" autocomplete="email" required>
+                <input id="auth-password" type="password" placeholder="Mot de passe (6 caractères minimum)" minlength="6" autocomplete="current-password" required>
+                <button type="submit">Se connecter</button>
+                <button id="register-button" type="button">Créer un compte</button>
+            </form>
+            <p id="auth-status" role="status"></p>
+            <button id="logout-button" type="button" hidden>Se déconnecter</button>
+        </section>
     </header>
 
 
     <main>
 
-        <section class="shop-section" aria-labelledby="shop-title">
+        <section class="shop-section app-view" data-view-panel="shop" aria-labelledby="shop-title" hidden>
             <div class="shop-heading">
                 <div>
                     <p class="section-kicker">BOUTIQUE</p>
@@ -43,14 +68,14 @@
             <div id="booster-shop" class="booster-grid"></div>
         </section>
 
-        <section class="pack-section">
+        <section class="pack-section app-view active" data-view-panel="packs" aria-labelledby="page-title">
 
             <div id="pack-container" class="pack-container">
                 <div class="pack-placeholder">
                     <span class="pack-clip"></span>
-                    <span class="pack-hole"></span>
-                    <p class="pack-label">All Access</p>
-                    <span class="pack-icon">♪</span>
+                    <p class="pack-label">ASHΛ // SERIES 01</p>
+                    <img class="pack-logo" src="asha-logo.png" alt="ASHΛ">
+                    <span class="pack-edition">UNDERGROUND PACK</span>
                     <p class="pack-hint">Ouvre un pack</p>
                 </div>
             </div>
@@ -64,10 +89,10 @@
         </section>
 
 
-        <section class="collection-section">
+        <section class="collection-section app-view" data-view-panel="collection" aria-labelledby="collection-title" hidden>
 
             <div class="section-title">
-                <h2>Collection</h2>
+                <h2 id="collection-title">Collection</h2>
 
                 <button id="refresh-collection">
                     Actualiser

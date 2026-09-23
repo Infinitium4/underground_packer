@@ -2,3 +2,6 @@ node_modules/
 .env
 *.log
 .DS_Store
+pack-opener/backend/pack-opener.sqlite
+pack-opener/backend/pack-opener.sqlite-shm
+pack-opener/backend/pack-opener.sqlite-wal

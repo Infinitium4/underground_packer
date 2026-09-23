@@ -26,6 +26,21 @@ const pointsValue =
 const boosterShop =
     document.getElementById('booster-shop');
 
+const pageTitle = document.getElementById('page-title');
+const pageTagline = document.getElementById('page-tagline');
+const navigationButtons = document.querySelectorAll('.nav-button');
+const viewPanels = document.querySelectorAll('[data-view-panel]');
+const authForm = document.getElementById('auth-form');
+const authEmail = document.getElementById('auth-email');
+const authPassword = document.getElementById('auth-password');
+const registerButton = document.getElementById('register-button');
+const authStatus = document.getElementById('auth-status');
+const logoutButton = document.getElementById('logout-button');
+const accountPanel = document.getElementById('account-panel');
+const profileMenu = document.getElementById('profile-menu');
+const profileEmail = document.getElementById('profile-email');
+const profileLogout = document.getElementById('profile-logout');
+
 
 // =========================
 // HELPERS
@@ -48,16 +63,59 @@ const rarityOrder = {
     exclu: 6,
 };
 
-let points = Number.parseInt(localStorage.getItem('asha-points') || '1200', 10);
+let points = 0;
+let authToken = localStorage.getItem('asha-auth-token');
 let shopCards = [];
 let previewAudio;
+
+const views = {
+    packs: {
+        title: 'OUVRIR DES PACKS',
+        tagline: 'Révèle les cartes de ton prochain drop.',
+    },
+    shop: {
+        title: 'BOUTIQUE',
+        tagline: 'Choisis les cartes à ajouter à ton casier.',
+    },
+    collection: {
+        title: 'COLLECTION',
+        tagline: 'Retrouve toutes les cartes de ton casier.',
+    },
+};
+
+const showView = (viewName) => {
+    const view = views[viewName] || views.packs;
+
+    pageTitle.textContent = view.title;
+    pageTagline.textContent = view.tagline;
+
+    navigationButtons.forEach((button) => {
+        const isActive = button.dataset.view === viewName;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-current', isActive ? 'page' : 'false');
+    });
+
+    viewPanels.forEach((panel) => {
+        const isActive = panel.dataset.viewPanel === viewName;
+        panel.hidden = !isActive;
+        panel.classList.toggle('active', isActive);
+    });
+
+    if (viewName === 'shop' && shopCards.length === 0) {
+        loadCardShop();
+    }
+
+    if (viewName === 'collection') {
+        loadCollection();
+    }
+};
 
 const buildPlaceholder = () => `
     <div class="pack-placeholder">
         <span class="pack-clip"></span>
-        <span class="pack-hole"></span>
-        <p class="pack-label">All Access</p>
-        <span class="pack-icon">♪</span>
+        <p class="pack-label">ASHΛ // SERIES 01</p>
+        <img class="pack-logo" src="asha-logo.png" alt="ASHΛ">
+        <span class="pack-edition">UNDERGROUND PACK</span>
         <p class="pack-hint">Ouvre un pack</p>
     </div>
 `;
@@ -66,7 +124,64 @@ const formatPoints = (value) => value.toLocaleString('fr-FR');
 
 const updatePoints = () => {
     pointsValue.textContent = formatPoints(points);
-    localStorage.setItem('asha-points', String(points));
+};
+
+const apiFetch = (url, options = {}) => {
+    const headers = new Headers(options.headers || {});
+    if (authToken) {
+        headers.set('Authorization', `Bearer ${authToken}`);
+    }
+    return fetch(url, { ...options, headers });
+};
+
+const setAuthenticated = (user) => {
+    document.body.classList.add('authenticated');
+    points = user.points ?? points;
+    updatePoints();
+    accountPanel.hidden = true;
+    profileMenu.hidden = false;
+    profileEmail.textContent = user.email;
+    authForm.hidden = true;
+    logoutButton.hidden = false;
+    authStatus.textContent = `Connecté : ${user.email}`;
+};
+
+const setLoggedOut = (message = 'Connecte-toi pour sauvegarder ta collection.') => {
+    document.body.classList.remove('authenticated');
+    accountPanel.hidden = false;
+    profileMenu.hidden = true;
+    authForm.hidden = false;
+    logoutButton.hidden = true;
+    authStatus.textContent = message;
+    points = 0;
+    updatePoints();
+};
+
+const authenticate = async (endpoint) => {
+    const response = await apiFetch(`${API_URL}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: authEmail.value, password: authPassword.value }),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.error || 'Connexion impossible');
+    authToken = data.token;
+    localStorage.setItem('asha-auth-token', authToken);
+    setAuthenticated({ email: data.email, points: data.points ?? 1200 });
+};
+
+const restoreSession = async () => {
+    if (!authToken) return setLoggedOut();
+    try {
+        const response = await apiFetch(`${API_URL}/api/auth/me`);
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error();
+        setAuthenticated(data.user);
+    } catch {
+        authToken = null;
+        localStorage.removeItem('asha-auth-token');
+        setLoggedOut();
+    }
 };
 
 const playLegendaryPreview = (card) => {
@@ -123,7 +238,7 @@ const renderCardShop = () => {
 
 const loadCardShop = async () => {
     try {
-        const response = await fetch(`${API_URL}/api/cards`);
+        const response = await apiFetch(`${API_URL}/api/cards`);
         const data = await response.json();
 
         if (!response.ok || !data.success) {
@@ -147,7 +262,7 @@ const buyCard = async (cardId, price, button) => {
     button.disabled = true;
 
     try {
-        const response = await fetch(`${API_URL}/api/cards/purchase`, {
+        const response = await apiFetch(`${API_URL}/api/cards/purchase`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: cardId }),
@@ -158,7 +273,7 @@ const buyCard = async (cardId, price, button) => {
             throw new Error(data.error || 'Achat impossible');
         }
 
-        points -= price;
+        points = data.points;
         updatePoints();
         statusText.textContent = `${data.card.name} ajouté à ta collection.`;
         loadCollection();
@@ -195,7 +310,7 @@ const openPack = async (booster = null) => {
         // On fait patienter l'anticipation (secousse) au moins 550ms,
         // même si la réponse de l'API arrive plus vite.
         const [response] = await Promise.all([
-            fetch(`${API_URL}/api/pack/open`, { method: 'POST' }),
+            apiFetch(`${API_URL}/api/pack/open`, { method: 'POST' }),
             wait(550),
         ]);
 
@@ -385,7 +500,7 @@ const loadCollection = async () => {
 
     try {
 
-        const response = await fetch(`${API_URL}/api/collection`);
+        const response = await apiFetch(`${API_URL}/api/collection`);
 
         if (!response.ok) {
             throw new Error(`Erreur HTTP ${response.status}`);
@@ -470,11 +585,43 @@ packContainer.addEventListener('click', (event) => {
 
 refreshCollectionButton.addEventListener('click', loadCollection);
 
+navigationButtons.forEach((button) => {
+    button.addEventListener('click', () => showView(button.dataset.view));
+});
+
+authForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    authStatus.textContent = 'Connexion...';
+    try {
+        await authenticate('/api/auth/login');
+    } catch (error) {
+        authStatus.textContent = error.message;
+    }
+});
+
+registerButton.addEventListener('click', async () => {
+    authStatus.textContent = 'Création du compte...';
+    try {
+        await authenticate('/api/auth/register');
+    } catch (error) {
+        authStatus.textContent = error.message;
+    }
+});
+
+logoutButton.addEventListener('click', async () => {
+    await apiFetch(`${API_URL}/api/auth/logout`, { method: 'POST' });
+    authToken = null;
+    localStorage.removeItem('asha-auth-token');
+    setLoggedOut('Déconnecté.');
+});
+
+profileLogout.addEventListener('click', () => logoutButton.click());
+
 
 // =========================
 // INITIALISATION
 // =========================
 
 updatePoints();
-loadCardShop();
-loadCollection();
+showView('packs');
+restoreSession();
