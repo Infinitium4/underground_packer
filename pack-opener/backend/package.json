@@ -2,9 +2,11 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "test": "node --test tests/app.test.cjs tests/spotify-client.test.cjs",
+    "check": "node --check server.js && node --check db.js && node --check spotify-client.js && node --check ../frontend/script.js && node --check ../frontend/collection-features.js"
   },
   "keywords": [],
   "author": "",

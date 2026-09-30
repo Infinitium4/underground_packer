@@ -1,10 +1,15 @@
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 
-const database = new sqlite3.Database(path.join(__dirname, 'pack-opener.sqlite'));
+const database = new sqlite3.Database(process.env.DATABASE_PATH || path.join(__dirname, 'pack-opener.sqlite'));
 
 const schema = [
     'PRAGMA foreign_keys = ON',
+    `CREATE TABLE IF NOT EXISTS spotify_cache (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at INTEGER NOT NULL)`,
+    `CREATE TABLE IF NOT EXISTS user_preferences (
+        user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        favorites TEXT NOT NULL DEFAULT '[]', showcase TEXT NOT NULL DEFAULT '[]', theme TEXT NOT NULL DEFAULT 'gold'
+    )`,
     `
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -95,7 +100,14 @@ const all = async (sql, params = []) => {
     }));
 };
 
-const transaction = async (callback) => {
+let transactionQueue = Promise.resolve();
+const transaction = (callback) => {
+    const operation = transactionQueue.then(() => executeTransaction(callback));
+    transactionQueue = operation.catch(() => {});
+    return operation;
+};
+
+const executeTransaction = async (callback) => {
     await ready;
     await run('BEGIN TRANSACTION');
     try {

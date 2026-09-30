@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3000';
+const API_URL = window.location.origin;
 
 
 // =========================
@@ -47,6 +47,52 @@ const profileLogout = document.getElementById('profile-logout');
 // =========================
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+})[char]);
+const safeUrl = (value) => {
+    try { const url = new URL(value); return url.protocol === 'https:' ? escapeHtml(url.href) : ''; }
+    catch { return ''; }
+};
+const coverUrl = (value) => safeUrl(value) || 'asha-logo.png';
+let toastTimer;
+const notify = (message) => {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toast.hidden = true; }, 5000);
+};
+let collectionCards = [];
+let artistCatalog = null;
+const renderArtistAlbum = () => {
+    const container = document.getElementById('artist-progress');
+    if (!artistCatalog) {
+        container.textContent = 'Le catalogue des artistes est en cours de chargement…';
+        return;
+    }
+    const owned = new Set(collectionCards.map((card) => card.id));
+    const artists = new Map();
+    for (const card of artistCatalog) {
+        if (!artists.has(card.artist)) artists.set(card.artist, new Map());
+        artists.get(card.artist).set(card.id, card);
+    }
+    container.innerHTML = [...artists].sort(([a], [b]) => a.localeCompare(b, 'fr')).map(([artist, tracks]) => {
+        const collected = [...tracks.keys()].filter((id) => owned.has(id)).length;
+        const total = tracks.size;
+        const percentage = Math.floor(collected / total * 100);
+        const complete = collected === total;
+        return `<article class="artist-progress-card${complete ? ' complete' : ''}">
+            <div><h3>${escapeHtml(artist)}</h3><span>${complete ? 'COMPLET ✓' : `${percentage} %`}</span></div>
+            <progress value="${collected}" max="${total}" aria-label="${escapeHtml(artist)} : ${collected} titres sur ${total}"></progress>
+            <p>${collected} / ${total} titres collectés · ${complete ? 'Album complété' : `${total - collected} à découvrir`}</p>
+        </article>`;
+    }).join('') || '<p>Aucun artiste disponible pour le moment.</p>';
+};
+let finishReveal = null;
+let sessionVersion = 0;
+const revealAllButton = document.getElementById('reveal-all');
+const packSummary = document.getElementById('pack-summary');
 
 const rarityClass = (rarity) => rarity
     .toLowerCase()
@@ -113,10 +159,11 @@ const showView = (viewName) => {
 const buildPlaceholder = () => `
     <div class="pack-placeholder">
         <span class="pack-clip"></span>
-        <p class="pack-label">ASHΛ // SERIES 01</p>
+        <p class="pack-label">ASHΛ <span>VOL. 01</span></p>
+        <span class="pack-side" aria-hidden="true">SOUND IS COLLECTIBLE // EST. UNDERGROUND</span>
         <img class="pack-logo" src="asha-logo.png" alt="ASHΛ">
-        <span class="pack-edition">UNDERGROUND PACK</span>
-        <p class="pack-hint">Ouvre un pack</p>
+        <span class="pack-edition">UNDER<br>GROUND<span>MUSIC COLLECTOR PACK</span></span>
+        <div class="pack-footer"><span class="pack-barcode" aria-hidden="true"></span><span class="pack-hint">DÉCHIRE.<br>DÉCOUVRE.</span></div>
     </div>
 `;
 
@@ -131,10 +178,11 @@ const apiFetch = (url, options = {}) => {
     if (authToken) {
         headers.set('Authorization', `Bearer ${authToken}`);
     }
-    return fetch(url, { ...options, headers });
+    return fetch(url, { signal: AbortSignal.timeout(20_000), ...options, headers });
 };
 
 const setAuthenticated = (user) => {
+    sessionVersion += 1;
     document.body.classList.add('authenticated');
     points = user.points ?? points;
     updatePoints();
@@ -144,9 +192,24 @@ const setAuthenticated = (user) => {
     authForm.hidden = true;
     logoutButton.hidden = false;
     authStatus.textContent = `Connecté : ${user.email}`;
+    authPassword.value = '';
+    loadCollection();
+    document.dispatchEvent(new Event('account-ready'));
 };
 
 const setLoggedOut = (message = 'Connecte-toi pour sauvegarder ta collection.') => {
+    sessionVersion += 1;
+    finishReveal?.();
+    document.dispatchEvent(new Event('account-cleared'));
+    previewAudio?.pause();
+    collectionCards = [];
+    artistCatalog = null;
+    shopCards = [];
+    packSummary.hidden = true;
+    packSummary.innerHTML = '';
+    packContainer.innerHTML = buildPlaceholder();
+    displayCollection([]);
+    showView('packs');
     document.body.classList.remove('authenticated');
     accountPanel.hidden = false;
     profileMenu.hidden = true;
@@ -158,6 +221,10 @@ const setLoggedOut = (message = 'Connecte-toi pour sauvegarder ta collection.') 
 };
 
 const authenticate = async (endpoint) => {
+    if (authForm.dataset.busy) return;
+    authForm.dataset.busy = 'true';
+    authForm.querySelectorAll('button').forEach((button) => { button.disabled = true; });
+    try {
     const response = await apiFetch(`${API_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -168,6 +235,10 @@ const authenticate = async (endpoint) => {
     authToken = data.token;
     localStorage.setItem('asha-auth-token', authToken);
     setAuthenticated({ email: data.email, points: data.points ?? 1200 });
+    } finally {
+        delete authForm.dataset.busy;
+        authForm.querySelectorAll('button').forEach((button) => { button.disabled = false; });
+    }
 };
 
 const restoreSession = async () => {
@@ -217,16 +288,16 @@ const renderCardShop = () => {
         return `
         <article class="booster-card card-shop-item" style="--delay: ${index * 55}ms">
             <div class="booster-art">
-                <img src="${card.cover || 'asha-logo.png'}" alt="${card.name}" loading="lazy">
+                <img src="${coverUrl(card.cover)}" alt="${escapeHtml(card.name)}" loading="lazy">
                 <span class="booster-stamp">CARTE 0${index + 1}</span>
-                <span class="booster-count">${card.artist}</span>
+                <span class="booster-count">${escapeHtml(card.artist)}</span>
             </div>
             <div class="booster-copy">
                 <div>
-                    <h3>${card.name}</h3>
-                    <p>${card.artist} // carte artiste</p>
+                    <h3>${escapeHtml(card.name)}</h3>
+                    <p>${escapeHtml(card.artist)} // carte artiste</p>
                 </div>
-                <button class="buy-booster" type="button" data-card-id="${card.id}" data-card-price="${price}">
+                <button class="buy-booster" type="button" data-card-id="${escapeHtml(card.id)}" data-card-price="${price}">
                     <span>ACHETER</span>
                     <strong>◆ ${formatPoints(price)}</strong>
                 </button>
@@ -237,6 +308,7 @@ const renderCardShop = () => {
 };
 
 const loadCardShop = async () => {
+    const currentSession = sessionVersion;
     try {
         const response = await apiFetch(`${API_URL}/api/cards`);
         const data = await response.json();
@@ -245,6 +317,7 @@ const loadCardShop = async () => {
             throw new Error(data.error || 'Impossible de charger les cartes');
         }
 
+        if (currentSession !== sessionVersion) return;
         shopCards = data.cards.slice(0, 6);
         renderCardShop();
     } catch (error) {
@@ -254,8 +327,10 @@ const loadCardShop = async () => {
 };
 
 const buyCard = async (cardId, price, button) => {
+    if (button.disabled) return;
+    const currentSession = sessionVersion;
     if (points < price) {
-        statusText.textContent = 'Pas assez de points pour cette carte.';
+        notify('Pas assez de points pour cette carte.');
         return;
     }
 
@@ -268,6 +343,7 @@ const buyCard = async (cardId, price, button) => {
             body: JSON.stringify({ id: cardId }),
         });
         const data = await response.json();
+        if (currentSession !== sessionVersion) return;
 
         if (!response.ok || !data.success) {
             throw new Error(data.error || 'Achat impossible');
@@ -275,10 +351,10 @@ const buyCard = async (cardId, price, button) => {
 
         points = data.points;
         updatePoints();
-        statusText.textContent = `${data.card.name} ajouté à ta collection.`;
+        notify(`${data.card.name} ajouté à ta collection.`);
         loadCollection();
     } catch (error) {
-        statusText.textContent = error.message;
+        notify(error.message);
     } finally {
         button.disabled = false;
     }
@@ -289,7 +365,32 @@ const buyCard = async (cardId, price, button) => {
 // OUVRIR UN PACK
 // =========================
 
+const tearOpenWrapper = async () => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const original = packContainer.querySelector('.pack-placeholder');
+    if (!original) return;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'pack-tear';
+    wrapper.setAttribute('aria-hidden', 'true');
+    wrapper.innerHTML = '<div class="tear-card-stack"><span></span><span></span><span></span></div><div class="tear-light"></div>';
+    for (const part of ['left', 'right', 'seal']) {
+        const fragment = original.cloneNode(true);
+        fragment.className = `pack-placeholder tear-fragment tear-${part}`;
+        wrapper.appendChild(fragment);
+    }
+    const seam = document.createElement('div');
+    seam.className = 'tear-seam';
+    wrapper.appendChild(seam);
+    packContainer.replaceChildren(wrapper);
+    statusText.textContent = 'Le sachet se déchire…';
+    // A timed fallback also completes the transition in background tabs.
+    await wait(500);
+};
+
 const openPack = async (booster = null) => {
+    if (openPackButton.disabled) return;
+    const currentSession = sessionVersion;
+    packSummary.hidden = true;
 
     if (booster && points < booster.price) {
         statusText.textContent = 'Pas assez de points pour ce booster.';
@@ -302,28 +403,18 @@ const openPack = async (booster = null) => {
     });
     statusText.textContent = 'Ouverture du pack...';
 
-    const placeholder = packContainer.querySelector('.pack-placeholder');
-    placeholder?.classList.add('shaking');
-
     try {
-
-        // On fait patienter l'anticipation (secousse) au moins 550ms,
-        // même si la réponse de l'API arrive plus vite.
         const [response] = await Promise.all([
             apiFetch(`${API_URL}/api/pack/open`, { method: 'POST' }),
-            wait(550),
+            tearOpenWrapper(),
         ]);
 
 
-        if (!response.ok) {
-            throw new Error(`Erreur HTTP ${response.status}`);
-        }
-
-
         const data = await response.json();
+        if (currentSession !== sessionVersion) return;
 
 
-        if (!data.success) {
+        if (!response.ok || !data.success) {
             throw new Error(data.error || 'Erreur inconnue');
         }
 
@@ -340,33 +431,28 @@ const openPack = async (booster = null) => {
 
         await displayPack(data.pack);
 
-        statusText.textContent = 'Pack terminé !';
+        if (currentSession !== sessionVersion) return;
+        statusText.textContent = `${data.pack.length} cartes ajoutées à ta collection. Prêt pour le prochain drop ?`;
 
         // Actualiser la collection
         loadCollection();
 
 
     } catch (error) {
+        if (currentSession !== sessionVersion) return;
 
         console.error(error);
 
-        statusText.textContent = 'Impossible d’ouvrir le pack.';
+        statusText.textContent = error.message || 'Impossible d’ouvrir le pack.';
 
         packContainer.innerHTML = buildPlaceholder();
 
-        const errorLine = document.createElement('p');
-        errorLine.style.color = '#ff8a8a';
-        errorLine.style.fontSize = '13px';
-        errorLine.style.marginTop = '10px';
-        errorLine.textContent = error.message;
-        statusText.after(errorLine);
-
+    } finally {
+        openPackButton.disabled = false;
+        document.querySelectorAll('.buy-booster').forEach((button) => {
+            button.disabled = false;
+        });
     }
-
-    openPackButton.disabled = false;
-    document.querySelectorAll('.buy-booster').forEach((button) => {
-        button.disabled = false;
-    });
 
 };
 
@@ -378,8 +464,68 @@ const openPack = async (booster = null) => {
 const displayPack = (pack) => {
 
     return new Promise((resolve) => {
+        if (!pack.length) { resolve(); return; }
 
         packContainer.innerHTML = '';
+        let effectTimer;
+        let unlockTimer;
+        let revealLocked = false;
+        let cinematic = null;
+        let cinematicCard = null;
+        const closeCinematic = () => {
+            if (!cinematic) return;
+            cinematic.close();
+            cinematic.remove();
+            cinematic = null;
+            revealLocked = false;
+            if (cinematicCard?.isConnected) cinematicCard.focus({ preventScroll: true });
+            cinematicCard = null;
+        };
+        const clearRevealEffect = () => {
+            clearTimeout(effectTimer);
+            clearTimeout(unlockTimer);
+            revealLocked = false;
+            closeCinematic();
+            packContainer.querySelector('.rarity-effect')?.remove();
+        };
+        const animateRarity = (card, element) => {
+            clearRevealEffect();
+            const rarity = rarityClass(card.rarity);
+            const durations = { commun: 650, rare: 900, epique: 1150, legendaire: 3600, special: 3600, exclu: 1650 };
+            const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const duration = reducedMotion ? 0 : (durations[rarity] || 650);
+            element.style.setProperty('--reveal-duration', `${Math.min(duration, 250)}ms`);
+            const effect = document.createElement('div');
+            effect.className = `rarity-effect ${rarity}`;
+            effect.setAttribute('aria-hidden', 'true');
+            effect.innerHTML = `<span class="reveal-aura"></span><span class="reveal-ring"></span>
+                <span class="reveal-beam"></span><span class="reveal-particles">${Array.from({ length: 12 }, (_, index) =>
+                    `<i style="--particle-angle:${index * 30}deg;--particle-delay:${index % 3 * 45}ms"></i>`).join('')}</span>
+                <span class="reveal-caption">${escapeHtml(card.rarity)}</span>`;
+            packContainer.appendChild(effect);
+            revealLocked = !reducedMotion;
+            if (!reducedMotion && ['legendaire', 'special'].includes(rarity)) {
+                cinematicCard = element;
+                cinematic = document.createElement('dialog');
+                cinematic.className = `card-cinematic ${rarity}`;
+                cinematic.setAttribute('aria-label', `Carte ${card.rarity} : ${card.name}, ${card.artist}`);
+                cinematic.innerHTML = `<div class="cinema-stage" aria-hidden="true">
+                    <div class="cinema-nebula"></div><div class="cinema-rays"></div>
+                    <div class="cinema-orbit orbit-one"></div><div class="cinema-orbit orbit-two"></div>
+                    <div class="cinema-shockwave"></div>
+                    <div class="cinema-sparks">${Array.from({ length: 36 }, (_, index) => `<i style="--angle:${index * 137.5}deg;--distance:${160 + index % 7 * 29}px;--delay:${index % 6 * 55}ms"></i>`).join('')}</div>
+                    <div class="cinema-heading"><span>ASHΛ // UNDERGROUND DROP</span><strong>${rarity === 'legendaire' ? 'LÉGENDAIRE' : 'SPÉCIAL'}</strong></div>
+                    <article class="cinema-card"><img src="${coverUrl(card.cover)}" alt=""><div class="cinema-foil"></div>
+                        <div class="cinema-card-info"><span>${escapeHtml(card.rarity)}</span><h2>${escapeHtml(card.name)}</h2><p>${escapeHtml(card.artist)}</p></div></article>
+                </div><button class="cinema-skip" type="button">Passer l’animation <span>Échap</span></button>`;
+                cinematic.querySelector('.cinema-skip').addEventListener('click', clearRevealEffect);
+                cinematic.addEventListener('cancel', (event) => { event.preventDefault(); clearRevealEffect(); });
+                document.body.appendChild(cinematic);
+                cinematic.showModal();
+            }
+            unlockTimer = setTimeout(() => { revealLocked = false; closeCinematic(); }, duration);
+            effectTimer = setTimeout(() => effect.remove(), reducedMotion ? 1200 : duration + 850);
+        };
 
         const sortedPack = [...pack].sort((firstCard, secondCard) => {
             const firstRarity = rarityClass(firstCard.rarity);
@@ -405,16 +551,16 @@ const displayPack = (pack) => {
                         <div class="card-face card-back"></div>
 
                         <div class="card-face card-front">
-                            <img src="${card.cover}" alt="${card.name}">
+                            <img src="${coverUrl(card.cover)}" alt="${escapeHtml(card.name)}">
 
                             <div class="card-info">
-                                <div class="card-name">${card.name}</div>
-                                <div class="card-artist">${card.artist}</div>
-                                <span class="rarity">${card.rarity}</span>
+                                <div class="card-name">${escapeHtml(card.name)}</div>
+                                <div class="card-artist">${escapeHtml(card.artist)}</div>
+                                <span class="rarity">${escapeHtml(card.rarity)}</span>
 
                                 ${
-                                    card.spotifyUrl
-                                    ? `<a class="spotify-link" href="${card.spotifyUrl}" target="_blank">Écouter sur Spotify →</a>`
+                                    safeUrl(card.spotifyUrl)
+                                    ? `<a class="spotify-link" href="${safeUrl(card.spotifyUrl)}" target="_blank" rel="noopener noreferrer" tabindex="-1">Écouter sur Spotify →</a>`
                                     : ''
                                 }
                             </div>
@@ -435,6 +581,7 @@ const displayPack = (pack) => {
         });
 
         const handleTopCardClick = (event) => {
+            if (event.target.closest('a')) return;
             const cardElement = event.target.closest('.pack-card');
 
             if (
@@ -446,7 +593,12 @@ const displayPack = (pack) => {
             }
 
             if (!cardElement.classList.contains('revealed')) {
+                animateRarity(sortedPack[cardElements.length - 1], cardElement);
                 cardElement.classList.add('revealed');
+                cardElement.setAttribute('aria-label', `${sortedPack[cardElements.length - 1].name}. Carte suivante`);
+                const link = cardElement.querySelector('a');
+                if (link) link.tabIndex = 0;
+                statusText.textContent = `Carte ${pack.length - cardElements.length + 1} sur ${pack.length} · Clique à nouveau pour continuer.`;
 
                 if (rarityClass(sortedPack[cardElements.length - 1].rarity) === 'legendaire') {
                     playLegendaryPreview({
@@ -458,11 +610,12 @@ const displayPack = (pack) => {
                 return;
             }
 
+            clearRevealEffect();
             cardElement.classList.add('flying-away');
             let cardRemoved = false;
 
             const finishCardRemoval = () => {
-                if (cardRemoved) {
+                if (cardRemoved || completed) {
                     return;
                 }
 
@@ -471,19 +624,60 @@ const displayPack = (pack) => {
                 cardElements.pop();
 
                 if (cardElements.length === 0) {
-                    packContainer.innerHTML = buildPlaceholder();
-                    packContainer.removeEventListener('click', handleTopCardClick);
-                    resolve();
-                }
+                    complete();
+                } else activateTopCard();
             };
 
-            cardElement.addEventListener('animationend', finishCardRemoval, { once: true });
+            cardElement.addEventListener('animationend', (animationEvent) => {
+                if (animationEvent.target === cardElement && animationEvent.animationName === 'card-fly-away') finishCardRemoval();
+            });
+            setTimeout(finishCardRemoval, 250);
 
             // Fallback for reduced-motion modes where the animation may be skipped.
             if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
                 finishCardRemoval();
             }
         };
+
+        const activateTopCard = () => {
+            cardElements.forEach((element, index) => {
+                const active = index === cardElements.length - 1;
+                element.tabIndex = active ? 0 : -1;
+                element.inert = !active;
+                element.setAttribute('role', 'button');
+                element.setAttribute('aria-label', 'Révéler la carte');
+            });
+            cardElements.at(-1)?.focus({ preventScroll: true });
+        };
+        const handleKey = (event) => {
+            if (event.target.closest('a')) return;
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                handleTopCardClick(event);
+            }
+        };
+        let completed = false;
+        const complete = () => {
+            if (completed) return;
+            completed = true;
+            clearRevealEffect();
+            packContainer.removeEventListener('click', handleTopCardClick);
+            packContainer.removeEventListener('keydown', handleKey);
+            packContainer.innerHTML = buildPlaceholder();
+            revealAllButton.hidden = true;
+            finishReveal = null;
+            packSummary.innerHTML = `<p class="section-kicker">TON DERNIER DROP // ${pack.length} CARTES</p><div class="summary-grid">${pack.map((card) => `
+                <article><img src="${coverUrl(card.cover)}" alt="${escapeHtml(card.name)}">
+                <strong>${escapeHtml(card.name)}</strong><span>${escapeHtml(card.artist)}</span>
+                <span class="rarity">${escapeHtml(card.rarity)}</span></article>`).join('')}</div>`;
+            packSummary.hidden = false;
+            openPackButton.focus({ preventScroll: true });
+            resolve();
+        };
+        finishReveal = complete;
+        revealAllButton.hidden = false;
+        activateTopCard();
+        packContainer.addEventListener('keydown', handleKey);
 
         packContainer.addEventListener('click', handleTopCardClick);
 
@@ -497,6 +691,7 @@ const displayPack = (pack) => {
 // =========================
 
 const loadCollection = async () => {
+    const currentSession = sessionVersion;
 
     try {
 
@@ -507,10 +702,24 @@ const loadCollection = async () => {
         }
 
         const data = await response.json();
-
-        displayCollection(data.collection);
+        if (currentSession !== sessionVersion) return;
+        collectionCards = data.collection || [];
+        displayCollection(collectionCards);
+        if (!artistCatalog) {
+            try {
+                const catalogResponse = await apiFetch(`${API_URL}/api/cards`);
+                const catalogData = await catalogResponse.json();
+                if (currentSession !== sessionVersion) return;
+                if (!catalogResponse.ok || !catalogData.success) throw new Error();
+                artistCatalog = catalogData.cards;
+                renderArtistAlbum();
+            } catch {
+                if (currentSession === sessionVersion) document.getElementById('artist-progress').textContent = 'Catalogue indisponible. Utilise Actualiser pour réessayer.';
+            }
+        }
 
     } catch (error) {
+        if (currentSession === sessionVersion) notify('Collection indisponible. Réessaie avec Actualiser.');
         console.error('Erreur collection :', error);
     }
 
@@ -522,17 +731,35 @@ const loadCollection = async () => {
 // =========================
 
 const displayCollection = (collection) => {
+    document.dispatchEvent(new Event('collection-updated'));
+    renderArtistAlbum();
+    collection = collection || [];
+    const search = rarityClass(document.getElementById('collection-search').value.trim());
+    const filter = document.getElementById('collection-rarity').value;
+    const sort = document.getElementById('collection-sort').value;
+    const total = collection.reduce((sum, card) => sum + (card.quantity || 1), 0);
+    const artists = new Set(collection.map((card) => card.artist)).size;
+    document.getElementById('collection-stats').innerHTML = `
+        <div><strong>${collection.length}</strong><span>Titres uniques</span></div>
+        <div><strong>${total}</strong><span>Cartes collectées</span></div>
+        <div><strong>${artists}</strong><span>Artistes découverts</span></div>
+        <div><strong>${total - collection.length}</strong><span>Doublons</span></div>`;
+    const filtered = collection.filter((card) => (!document.getElementById('favorites-only').checked || window.collectionPreferences?.favorites.includes(card.id)) && (!filter || rarityClass(card.rarity) === filter)
+        && (!search || rarityClass(`${card.name} ${card.artist}`).includes(search)));
+    document.getElementById('collection-count').textContent = `${filtered.length} / ${collection.length} titres affichés`;
 
     collectionContainer.innerHTML = '';
 
-    if (!collection || collection.length === 0) {
+    if (filtered.length === 0) {
         collectionContainer.innerHTML = `
-            <p class="empty">Aucune carte dans ta collection.</p>
+            <p class="empty">${collection.length ? 'Aucun morceau ne correspond. Essaie un autre titre ou une autre rareté.' : 'Ton premier drop t’attend. Ouvre un pack pour commencer ta collection.'}</p>
         `;
         return;
     }
 
-    const sortedCollection = [...collection].sort((firstCard, secondCard) => {
+    const sortedCollection = [...filtered].sort((firstCard, secondCard) => {
+        if (sort === 'name' || sort === 'artist') return firstCard[sort].localeCompare(secondCard[sort], 'fr');
+        if (sort === 'quantity') return (secondCard.quantity || 1) - (firstCard.quantity || 1);
         const firstRarity = rarityClass(firstCard.rarity);
         const secondRarity = rarityClass(secondCard.rarity);
 
@@ -543,14 +770,23 @@ const displayCollection = (collection) => {
 
         const element = document.createElement('div');
         element.className = `collection-card ${rarityClass(card.rarity)}`;
+        element.dataset.cardId = card.id;
 
         element.innerHTML = `
-            <img src="${card.cover}" alt="${card.name}">
+            <img src="${coverUrl(card.cover)}" alt="${escapeHtml(card.name)}" loading="lazy">
+            <span class="quantity-badge" aria-label="${card.quantity || 1} exemplaires">×${card.quantity || 1}</span>
 
             <div class="collection-info">
-                <h3>${card.name}</h3>
-                <p>${card.artist}</p>
-                <span class="rarity">${card.rarity}</span>
+                <h3 title="${escapeHtml(card.name)}">${escapeHtml(card.name)}</h3>
+                <p>${escapeHtml(card.artist)}</p>
+                <span class="rarity">${escapeHtml(card.rarity)}</span>
+                <div class="card-actions">
+                    <button type="button" data-action="details">Voir la fiche</button>
+                    <button type="button" data-action="favorite" aria-pressed="${window.collectionPreferences?.favorites.includes(card.id) || false}">${window.collectionPreferences?.favorites.includes(card.id) ? '♥ Favori' : '♡ Favori'}</button>
+                    <button type="button" data-action="showcase" aria-pressed="${window.collectionPreferences?.showcase.includes(card.id) || false}">${window.collectionPreferences?.showcase.includes(card.id) ? 'Retirer de la vitrine' : 'Exposer'}</button>
+                    <button type="button" data-action="sell" ${card.salePrice ? '' : 'disabled'}>Vendre · +${formatPoints(card.salePrice || 0)} pts</button>
+                </div>
+                ${safeUrl(card.spotifyUrl) ? `<a class="spotify-link" href="${safeUrl(card.spotifyUrl)}" target="_blank" rel="noopener noreferrer">Écouter sur Spotify ↗</a>` : ''}
             </div>
         `;
 
@@ -566,6 +802,15 @@ const displayCollection = (collection) => {
 // =========================
 
 openPackButton.addEventListener('click', () => openPack());
+revealAllButton.addEventListener('click', () => finishReveal?.());
+['collection-search', 'collection-rarity', 'collection-sort'].forEach((id) => {
+    document.getElementById(id).addEventListener('input', () => displayCollection(collectionCards));
+});
+document.addEventListener('error', (event) => {
+    if (event.target instanceof HTMLImageElement && !event.target.src.endsWith('/asha-logo.png')) {
+        event.target.src = 'asha-logo.png';
+    }
+}, true);
 
 boosterShop.addEventListener('click', (event) => {
     const button = event.target.closest('.buy-booster');
@@ -600,6 +845,7 @@ authForm.addEventListener('submit', async (event) => {
 });
 
 registerButton.addEventListener('click', async () => {
+    if (!authForm.reportValidity()) return;
     authStatus.textContent = 'Création du compte...';
     try {
         await authenticate('/api/auth/register');
@@ -609,7 +855,13 @@ registerButton.addEventListener('click', async () => {
 });
 
 logoutButton.addEventListener('click', async () => {
-    await apiFetch(`${API_URL}/api/auth/logout`, { method: 'POST' });
+    try {
+        const response = await apiFetch(`${API_URL}/api/auth/logout`, { method: 'POST' });
+        if (!response.ok && response.status !== 401) throw new Error();
+    } catch {
+        notify('Déconnexion impossible. Vérifie ta connexion puis réessaie.');
+        return;
+    }
     authToken = null;
     localStorage.removeItem('asha-auth-token');
     setLoggedOut('Déconnecté.');
