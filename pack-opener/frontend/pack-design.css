@@ -1,0 +1,97 @@
+/* Sealed foil sleeve. Original ASHΛ logo is kept as the central artwork. */
+.pack-card.flying-away { animation-duration: .2s; }
+.pack-container:has(.pack-tear) { overflow: hidden; }
+.pack-tear { position: relative; width: 250px; height: 365px; transform: rotate(-4deg); pointer-events: none; }
+.pack-tear .tear-fragment { position: absolute; inset: 0; margin: 0; transform: none; transition: none; pointer-events: none; box-shadow: none; }
+.pack-tear .tear-seal {
+    z-index: 5;
+    clip-path: polygon(0 0, 100% 0, 100% 23%, 94% 21%, 88% 24%, 82% 22%, 75% 24%, 68% 21%, 60% 23%, 52% 21%, 45% 24%, 37% 22%, 30% 24%, 22% 21%, 15% 23%, 8% 21%, 0 24%);
+    transform-origin: 100% 22%;
+    animation: wrapper-seal-rip 1.6s ease-in-out both;
+}
+.pack-tear .tear-left {
+    z-index: 3;
+    clip-path: polygon(0 24%, 8% 21%, 15% 23%, 22% 21%, 30% 24%, 37% 22%, 45% 24%, 52% 21%, 51% 30%, 55% 38%, 48% 47%, 52% 57%, 46% 67%, 50% 78%, 44% 88%, 48% 100%, 0 100%);
+    transform-origin: 0 100%;
+    animation: wrapper-left-peel 1.6s cubic-bezier(.3, 0, .3, 1) both;
+}
+.pack-tear .tear-right {
+    z-index: 3;
+    clip-path: polygon(52% 21%, 60% 23%, 68% 21%, 75% 24%, 82% 22%, 88% 24%, 94% 21%, 100% 23%, 100% 100%, 48% 100%, 44% 88%, 50% 78%, 46% 67%, 52% 57%, 48% 47%, 55% 38%, 51% 30%);
+    transform-origin: 100% 100%;
+    animation: wrapper-right-peel 1.6s cubic-bezier(.3, 0, .3, 1) both;
+}
+.tear-seam { position: absolute; top: 21%; left: 0; width: 100%; height: 10px; z-index: 6; background: #efe0ff; clip-path: polygon(0 45%, 8% 0, 15% 80%, 22% 0, 30% 100%, 37% 20%, 45% 100%, 52% 0, 60% 80%, 68% 0, 75% 100%, 82% 20%, 88% 100%, 94% 0, 100% 70%, 100% 100%, 0 100%); animation: wrapper-seam 1.6s ease both; transform-origin: left; }
+.tear-light { position: absolute; inset: -30px; border-radius: 50%; background: radial-gradient(ellipse, #c48cff66, transparent 65%); animation: wrapper-light 1.6s ease both; }
+.tear-card-stack { position: absolute; width: 190px; height: 300px; left: 30px; top: 33px; animation: wrapper-cards-rise 1.6s ease both; }
+.tear-card-stack span { position: absolute; inset: 0; border: 1px solid #bb91e7; border-radius: 16px; background: url('asha-logo.png') center / 95px no-repeat, linear-gradient(145deg, #2e193e, #09060d); box-shadow: 0 15px 30px #0006; }
+.tear-card-stack span:nth-child(1) { transform: rotate(-5deg) translate(-8px, 5px); }
+.tear-card-stack span:nth-child(2) { transform: rotate(5deg) translate(8px, 5px); }
+@keyframes wrapper-seal-rip {
+    0%, 8% { transform: translate(0, 0) rotate(0); }
+    28% { transform: translate(-8px, -10px) rotate(8deg); }
+    52% { opacity: 1; transform: translate(50px, -45px) rotate(25deg); }
+    85%, 100% { opacity: 0; transform: translate(130px, -140px) rotate(60deg); }
+}
+@keyframes wrapper-left-peel {
+    0%, 32% { transform: translate(0, 0) rotate(0); opacity: 1; }
+    62% { opacity: 1; transform: translate(-35px, 20px) rotate(-18deg); }
+    100% { opacity: 0; transform: translate(-105px, 160px) rotate(-42deg); }
+}
+@keyframes wrapper-right-peel {
+    0%, 35% { transform: translate(0, 0) rotate(0); opacity: 1; }
+    65% { opacity: 1; transform: translate(35px, 20px) rotate(18deg); }
+    100% { opacity: 0; transform: translate(105px, 160px) rotate(42deg); }
+}
+@keyframes wrapper-seam { 0% { opacity: 0; transform: scaleX(0); } 12% { opacity: 1; } 32% { opacity: 1; transform: scaleX(1); } 50%, 100% { opacity: 0; transform: scaleX(1); } }
+@keyframes wrapper-light { 0%, 25% { opacity: 0; transform: scale(.5); } 65% { opacity: 1; transform: scale(1.15); } 100% { opacity: 0; transform: scale(1.4); } }
+@keyframes wrapper-cards-rise { 0%, 25% { opacity: 0; transform: translateY(20px) scale(.85); } 60% { opacity: 1; transform: translateY(-12px) scale(1); } 100% { opacity: 1; transform: rotate(4deg); } }
+@media (prefers-reduced-motion: reduce) { .pack-tear * { animation-duration: .01ms !important; } }
+.pack-placeholder {
+    width: 250px;
+    height: 365px;
+    padding: 32px 23px 29px;
+    gap: 0;
+    align-items: stretch;
+    border-radius: 5px;
+    border: 1px solid #e0cfff88;
+    background:
+        linear-gradient(104deg, #ffffff10, transparent 14%, #fff2 15%, transparent 17% 76%, #d4b5ff25 78%, transparent 81%),
+        linear-gradient(155deg, transparent 20%, #a855f72e 42%, transparent 65%),
+        repeating-linear-gradient(0deg, #ffffff02 0 1px, transparent 1px 4px),
+        linear-gradient(135deg, #272032, #100d18 48%, #301643);
+    box-shadow: 0 30px 45px #0009, 0 0 65px #9c4dff20, inset 3px 0 4px #ffffff22, inset -3px 0 5px #0008;
+    transform: rotate(-4deg);
+    transition: transform .35s ease, box-shadow .35s ease;
+}
+.pack-placeholder:hover {
+    transform: translateY(-8px) rotate(0deg);
+    box-shadow: 0 40px 55px #000a, 0 0 85px #af65ff40, inset 3px 0 4px #ffffff33;
+}
+.pack-clip, .pack-placeholder::after {
+    height: 17px;
+    opacity: 1;
+    background: repeating-linear-gradient(90deg, #ffffff22 0 1px, #0003 1px 3px, transparent 3px 6px), linear-gradient(110deg, #655d72, #d2c7df 27%, #7e708e 52%, #e6dbef 76%, #71617e);
+    border-color: #e8d5ff66;
+}
+.pack-placeholder::before {
+    content: '';
+    position: absolute;
+    inset: 17px 8px;
+    border-left: 1px solid #ffffff15;
+    border-right: 1px solid #ffffff15;
+    pointer-events: none;
+}
+.pack-label { display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 700; color: #f0e5ff; letter-spacing: 3px; }
+.pack-label > span { padding: 4px 6px; font-size: 8px; letter-spacing: 1px; border: 1px solid #b4a0c666; color: #cdbadd; }
+.pack-logo { align-self: center; width: 122px; height: 122px; margin: 12px 0 4px; filter: drop-shadow(0 0 22px #b960ff55); transform: rotate(4deg); }
+.pack-side { position: absolute; right: 12px; top: 79px; writing-mode: vertical-rl; font: 7px var(--font-mono); letter-spacing: 1.8px; color: #cab5df80; }
+.pack-edition { padding: 0; border: 0; color: #f4edff; font: 48px/.83 var(--font-display); letter-spacing: 2px; text-align: left; text-shadow: 2px 2px #b372ff40; }
+.pack-edition > span { display: block; margin-top: 11px; color: #c5a5e3; font: 7px var(--font-mono); letter-spacing: 2px; text-shadow: none; }
+.pack-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #d3b4f533; padding-top: 10px; margin-top: 13px; }
+.pack-barcode { width: 76px; height: 21px; opacity: .65; background: repeating-linear-gradient(90deg, #e7d6f7 0 1px, transparent 1px 3px, #e7d6f7 3px 6px, transparent 6px 8px, #e7d6f7 8px 10px, transparent 10px 13px); }
+.pack-hint { font: 8px/1.6 var(--font-mono); letter-spacing: 1.2px; color: #e8d6fb; text-align: right; }
+.pack-tear .tear-fragment, .pack-tear .tear-seam, .pack-tear .tear-light, .pack-tear .tear-card-stack { animation-duration: .48s; }
+@media (prefers-reduced-motion: reduce) {
+    .pack-placeholder, .pack-placeholder:hover { transform: none; transition: none; }
+}

@@ -1,0 +1,230 @@
+/* Full-screen reveals use the dialog top layer, above navigation and notifications. */
+.card-cinematic {
+    --cinema-gold: #ffd36b;
+    position: fixed; inset: 0; width: 100%; max-width: none; height: 100%; max-height: none;
+    padding: 0; border: 0; background: #08060cf5; color: #fff; overflow: hidden;
+}
+.card-cinematic::backdrop { background: #08060c; }
+.cinema-stage { position: absolute; inset: 0; display: grid; place-items: center; perspective: 1100px; overflow: hidden; }
+.cinema-nebula, .cinema-rays, .cinema-orbit, .cinema-shockwave, .cinema-sparks {
+    position: absolute; left: 50%; top: 50%; width: min(85vw, 680px); aspect-ratio: 1;
+    transform: translate(-50%, -50%); pointer-events: none;
+}
+.cinema-nebula { border-radius: 50%; background: radial-gradient(circle, #ffd36b66, #9c4f1922 45%, transparent 70%); animation: cinema-charge 3.6s ease both; }
+.cinema-rays { width: max(100vw, 100vh); background: repeating-conic-gradient(transparent 0deg 13deg, #ffd36b33 14deg 17deg, transparent 18deg 30deg); mask-image: radial-gradient(circle, transparent 8%, #000 30%, transparent 68%); animation: cinema-rays 3.6s ease both; }
+.cinema-orbit { border: 2px solid #ffd36ba0; border-radius: 50%; box-shadow: 0 0 30px #e8b94d44, inset 0 0 30px #e8b94d33; animation: cinema-orbit 3.6s ease both; }
+.orbit-two { width: min(70vw, 530px); border-style: dashed; animation-direction: reverse; opacity: .5; }
+.cinema-shockwave { border: 4px solid #ffe4a2; border-radius: 50%; animation: cinema-impact 3.6s ease-out both; }
+.cinema-sparks { width: 1px; height: 1px; }
+.cinema-sparks i { position: absolute; width: 4px; height: 14px; border-radius: 50%; background: #ffe7a6; box-shadow: 0 0 12px #ffd36b; animation: cinema-spark 2.7s calc(600ms + var(--delay)) ease-out both; }
+.cinema-heading { position: absolute; top: max(35px, calc(50% - 285px)); text-align: center; animation: cinema-title 3.6s ease both; }
+.cinema-heading span { display: block; font: 10px var(--font-mono); letter-spacing: 4px; color: #fff9; }
+.cinema-heading strong { display: block; font: clamp(38px, 7vw, 72px) var(--font-display); letter-spacing: 9px; color: #ffe3a2; text-shadow: 0 0 35px #e8b94d80; }
+.cinema-card { position: relative; width: min(270px, 65vw); border-radius: 18px; border: 2px solid #ffe3a2; overflow: hidden; background: #22180f; box-shadow: 0 0 0 5px #ffd36b22, 0 0 75px #e8b94d66, 0 35px 80px #000; animation: cinema-card-arrival 3.6s cubic-bezier(.16, .8, .25, 1) both; }
+.cinema-card > img { width: 100%; aspect-ratio: 1; display: block; object-fit: cover; }
+.cinema-card-info { position: relative; padding: 18px; background: linear-gradient(125deg, #7e5819, #21170c); }
+.cinema-card-info > span { font: 10px var(--font-mono); letter-spacing: 3px; text-transform: uppercase; color: #ffe3a2; }
+.cinema-card-info h2 { font-size: 18px; margin: 8px 0 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cinema-card-info p { font-size: 13px; color: #fffd; }
+.cinema-foil { position: absolute; inset: -50%; background: linear-gradient(110deg, transparent 40%, #fff7 48%, transparent 55%); animation: cinema-foil 3.6s ease both; pointer-events: none; }
+.cinema-skip { position: absolute; bottom: max(24px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); padding: 13px 20px; border: 1px solid #ffffff40; border-radius: 30px; background: #08060ccc; color: #fff; cursor: pointer; white-space: nowrap; font: 12px var(--font-body); }
+.cinema-skip span { margin-left: 12px; color: #fff8; font-size: 10px; }
+.card-cinematic.special .cinema-nebula { background: conic-gradient(#ff379866, #6439ff88, #38ffdd66, #ffdb5566, #ff379866); mask-image: radial-gradient(circle, #000 5%, transparent 70%); }
+.card-cinematic.special .cinema-rays { background: repeating-conic-gradient(#fd419333 0deg 15deg, transparent 15deg 30deg, #3eece433 30deg 45deg, transparent 45deg 60deg); }
+.card-cinematic.special .cinema-orbit { border-color: #ff75d3 #6ef5df #8f88ff #ffd578; border-width: 5px; box-shadow: 0 0 45px #b66aff88; animation-name: cinema-portal; }
+.card-cinematic.special .cinema-shockwave { border-color: #bfaaff; }
+.card-cinematic.special .cinema-sparks i { background: #ff8fce; box-shadow: 0 0 15px #ff60cc; width: 8px; height: 8px; border-radius: 1px; }
+.card-cinematic.special .cinema-sparks i:nth-child(3n) { background: #52ffe1; box-shadow: 0 0 15px #52ffe1; }
+.card-cinematic.special .cinema-heading strong { color: #edc8ff; text-shadow: 0 0 30px #c567ff; }
+.card-cinematic.special .cinema-card { border-color: #e4aaff; background: #21112b; box-shadow: 0 0 0 5px #b76aff33, -25px 0 75px #fe5eb144, 25px 0 75px #3cffe644; animation-name: cinema-special-arrival; }
+.card-cinematic.special .cinema-card-info { background: linear-gradient(125deg, #72367c, #182e44); }
+.card-cinematic.special .cinema-foil { background: linear-gradient(110deg, transparent 25%, #ff66aa55 35%, #8a82ff88 45%, #5affda66 55%, transparent 65%); }
+@keyframes cinema-charge { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.15); } 25% { opacity: .6; transform: translate(-50%, -50%) scale(.6); } 45%, 80% { opacity: 1; transform: translate(-50%, -50%) scale(1.35); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); } }
+@keyframes cinema-rays { 0%, 15% { opacity: 0; transform: translate(-50%, -50%) rotate(-35deg) scale(.5); } 35%, 75% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) rotate(30deg) scale(1.2); } }
+@keyframes cinema-orbit { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(-60deg) scale(.2); } 30%, 75% { opacity: .8; } 100% { opacity: 0; transform: translate(-50%, -50%) rotate(70deg) scale(1.15); } }
+@keyframes cinema-portal { 0% { opacity: 0; transform: translate(-50%, -50%) rotateX(65deg) rotate(-90deg) scale(.3); } 40%, 75% { opacity: .9; } 100% { opacity: 0; transform: translate(-50%, -50%) rotateX(20deg) rotate(180deg) scale(1.1); } }
+@keyframes cinema-impact { 0%, 20% { opacity: 0; transform: translate(-50%, -50%) scale(.15); } 28% { opacity: .85; } 65%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.8); } }
+@keyframes cinema-spark { 0% { opacity: 0; transform: rotate(var(--angle)) translateY(-30px); } 20% { opacity: 1; } 100% { opacity: 0; transform: rotate(var(--angle)) translateY(calc(-1 * var(--distance))) rotate(120deg) scale(.2); } }
+@keyframes cinema-card-arrival { 0% { opacity: 0; transform: translateY(80px) rotateY(150deg) rotateZ(-15deg) scale(.25); } 22% { opacity: 1; } 45% { transform: translateY(-10px) rotateY(-12deg) rotateZ(3deg) scale(1.08); } 70%, 90% { opacity: 1; transform: translateY(0) rotateY(0) rotateZ(0) scale(1); } 100% { opacity: 0; transform: scale(.92); } }
+@keyframes cinema-special-arrival { 0% { opacity: 0; transform: rotateY(-180deg) rotateZ(25deg) scale(.1); } 25% { opacity: 1; } 45% { transform: rotateY(15deg) rotateZ(-5deg) scale(1.08); } 70%, 90% { opacity: 1; transform: rotateY(0) rotateZ(0) scale(1); } 100% { opacity: 0; transform: scale(.92); } }
+@keyframes cinema-title { 0%, 25% { opacity: 0; transform: translateY(15px); } 45%, 85% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; } }
+@keyframes cinema-foil { 0%, 30% { transform: translateX(-70%); } 75%, 100% { transform: translateX(70%); } }
+@media (max-height: 650px) { .cinema-card { width: min(210px, 48vw); } .cinema-heading { top: 18px; } .cinema-heading strong { font-size: 32px; } .cinema-heading span { display: none; } }
+@media (prefers-reduced-motion: reduce) { .card-cinematic { display: none; } }
+
+/* Effects live outside the 3D cards, so halos never clip their artwork. */
+.rarity-effect {
+    --effect-color: #cec7bb;
+    position: absolute;
+    inset: 0;
+    z-index: 1000;
+    pointer-events: none;
+    isolation: isolate;
+}
+.rarity-effect.rare { --effect-color: #35d3b6; }
+.rarity-effect.epique { --effect-color: #bd83ff; }
+.rarity-effect.legendaire { --effect-color: #ffd36b; }
+.rarity-effect.special { --effect-color: #ff8fce; }
+.rarity-effect.exclu { --effect-color: #e7eaff; }
+.reveal-aura, .reveal-ring, .reveal-beam, .reveal-particles {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 280px;
+    height: 280px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    opacity: 0;
+}
+.reveal-aura {
+    background: radial-gradient(circle, transparent 35%, color-mix(in srgb, var(--effect-color) 30%, transparent) 55%, transparent 72%);
+}
+.reveal-ring { border: 2px solid var(--effect-color); box-shadow: 0 0 24px var(--effect-color), inset 0 0 18px var(--effect-color); }
+.reveal-beam { border-radius: 0; }
+.reveal-caption {
+    position: absolute;
+    top: calc(50% + 167px);
+    left: 50%;
+    padding: 7px 18px;
+    border: 1px solid color-mix(in srgb, var(--effect-color) 45%, transparent);
+    border-radius: 30px;
+    background: #100d12ed;
+    color: var(--effect-color);
+    font: 700 12px var(--font-mono);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    animation: rarity-caption 1.8s ease both;
+}
+.reveal-particles i {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 4px;
+    height: 10px;
+    border-radius: 4px;
+    background: var(--effect-color);
+    box-shadow: 0 0 12px var(--effect-color);
+    opacity: 0;
+}
+.pack-card.revealed .card-flip-inner { transition-duration: var(--reveal-duration, 650ms); }
+
+/* Commun: a soft silver glint. Rare: a turquoise sonar wave. */
+.commun .reveal-aura { animation: rarity-soft-glow 850ms ease-out both; }
+.rare .reveal-ring { animation: rarity-sonar 1100ms cubic-bezier(.16, 1, .3, 1) both; }
+.rare .reveal-aura { animation: rarity-soft-glow 1200ms ease both; }
+
+/* Épique: two violet orbital arcs. */
+.epique .reveal-ring {
+    border-width: 3px;
+    border-color: var(--effect-color) transparent;
+    animation: rarity-orbit 1500ms cubic-bezier(.2, .7, .2, 1) both;
+}
+.epique .reveal-aura { animation: rarity-soft-glow 1600ms ease both; }
+.epique .reveal-beam {
+    border: 1px solid var(--effect-color);
+    border-left-color: transparent;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: rarity-orbit 1400ms ease reverse both;
+}
+
+/* Légendaire: a gold sunburst and twelve sparks. */
+.legendaire .reveal-aura { animation: rarity-soft-glow 1900ms ease both; }
+.legendaire .reveal-ring { animation: rarity-sonar 1500ms 150ms ease-out both; }
+.legendaire .reveal-beam {
+    width: 360px;
+    height: 360px;
+    background: repeating-conic-gradient(from 15deg, transparent 0deg 24deg, #ffd36b55 27deg 30deg);
+    mask-image: radial-gradient(circle, transparent 35%, #000 55%, transparent 70%);
+    animation: rarity-crown 1900ms ease-out both;
+}
+.legendaire .reveal-particles, .exclu .reveal-particles { opacity: 1; }
+.legendaire .reveal-particles i, .exclu .reveal-particles i {
+    animation: rarity-spark 1400ms calc(150ms + var(--particle-delay)) ease-out both;
+}
+
+/* Spécial: a prismatic ribbon passing across the card. */
+.special .reveal-aura {
+    background: conic-gradient(from 45deg, #ff78ba66, #8f88ff66, #46e4d666, #ffd57866, #ff78ba66);
+    mask-image: radial-gradient(circle, transparent 35%, #000 55%, transparent 72%);
+    animation: rarity-prism 1750ms ease-out both;
+}
+.special .reveal-beam {
+    width: 110px;
+    height: 330px;
+    background: linear-gradient(90deg, transparent, #ff9fd344, #a2ffed66, transparent);
+    animation: rarity-ribbon 1400ms ease-in-out both;
+}
+
+/* Exclu: an eclipse followed by an expanding stellar halo. */
+.exclu .reveal-aura {
+    background: radial-gradient(circle, #100d1299 20%, #8582ff55 48%, transparent 70%);
+    animation: rarity-eclipse 2100ms cubic-bezier(.16, 1, .3, 1) both;
+}
+.exclu .reveal-ring { border-width: 3px; animation: rarity-eclipse-ring 2000ms ease both; }
+.exclu .reveal-caption { border-color: #d7d2ff; text-shadow: 0 0 15px #b7aaff; }
+.exclu .reveal-particles i { height: 4px; animation-duration: 1800ms; }
+
+@keyframes rarity-soft-glow {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(.65); }
+    35% { opacity: .85; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.2); }
+}
+@keyframes rarity-sonar {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(.55); }
+    20% { opacity: .7; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.3); }
+}
+@keyframes rarity-orbit {
+    0% { opacity: 0; transform: translate(-50%, -50%) rotate(-120deg) scale(.6); }
+    30% { opacity: .8; }
+    100% { opacity: 0; transform: translate(-50%, -50%) rotate(110deg) scale(1.15); }
+}
+@keyframes rarity-crown {
+    0% { opacity: 0; transform: translate(-50%, -50%) rotate(-15deg) scale(.6); }
+    35% { opacity: .9; }
+    100% { opacity: 0; transform: translate(-50%, -50%) rotate(25deg) scale(1.1); }
+}
+@keyframes rarity-spark {
+    0% { opacity: 0; transform: rotate(var(--particle-angle)) translateY(-85px); }
+    25% { opacity: 1; }
+    100% { opacity: 0; transform: rotate(var(--particle-angle)) translateY(-180px) scale(.2); }
+}
+@keyframes rarity-prism {
+    0% { opacity: 0; transform: translate(-50%, -50%) rotate(-90deg) scale(.8); }
+    35% { opacity: .85; }
+    100% { opacity: 0; transform: translate(-50%, -50%) rotate(100deg) scale(1.25); }
+}
+@keyframes rarity-ribbon {
+    0% { opacity: 0; transform: translate(-150%, -50%) skewX(-15deg); }
+    35%, 60% { opacity: .65; }
+    100% { opacity: 0; transform: translate(70%, -50%) skewX(-15deg); }
+}
+@keyframes rarity-eclipse {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(1.25); }
+    30% { opacity: .9; transform: translate(-50%, -50%) scale(.7); }
+    55% { opacity: .75; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.3); }
+}
+@keyframes rarity-eclipse-ring {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(1.15); }
+    30% { opacity: .65; transform: translate(-50%, -50%) scale(.65); }
+    55% { opacity: .85; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.3); }
+}
+@keyframes rarity-caption {
+    0% { opacity: 0; transform: translate(-50%, 8px); }
+    25%, 80% { opacity: 1; transform: translate(-50%, 0); }
+    100% { opacity: 0; transform: translate(-50%, -5px); }
+}
+@media (max-width: 480px) {
+    .reveal-aura, .reveal-ring, .reveal-particles { width: 240px; height: 240px; }
+    .legendaire .reveal-beam { width: 300px; height: 300px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .rarity-effect .reveal-aura, .rarity-effect .reveal-ring, .rarity-effect .reveal-beam,
+    .rarity-effect .reveal-particles { display: none; }
+    .rarity-effect .reveal-caption { animation: none; opacity: 1; transform: translateX(-50%); }
+    .pack-card.revealed .card-flip-inner { transition: none; }
+}

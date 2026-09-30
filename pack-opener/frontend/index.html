@@ -4,13 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Pack Opener</title>
+    <title>ASHΛ — Underground Packs</title>
+    <meta name="theme-color" content="#121012">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="enhancements.css">
+    <link rel="stylesheet" href="rarity-effects.css">
+    <link rel="stylesheet" href="pack-design.css">
 </head>
 
 <body>
@@ -20,7 +24,7 @@
             <p class="eyebrow">ASHΛ // ITEM SHOP</p>
             <div class="points-display">
                 <span class="points-icon">◆</span>
-                <strong id="points-value">10000000 200</strong>
+                <strong id="points-value">0</strong>
                 <span>PTS</span>
             </div>
             <div id="profile-menu" class="profile-menu" hidden>
@@ -39,12 +43,13 @@
 
         <section id="account-panel" class="account-panel" aria-labelledby="account-title">
             <div>
-                <p class="section-kicker">COMPTE</p>
+                <p class="section-kicker">ASHΛ // UNDERGROUND COLLECTION</p>
                 <h2 id="account-title">Sauvegarde ta collection</h2>
+                <p class="account-intro">Découvre la scène underground. Ouvre tes packs, révèle tes morceaux et compose ta collection.</p>
             </div>
             <form id="auth-form">
-                <input id="auth-email" type="email" placeholder="Email" autocomplete="email" required>
-                <input id="auth-password" type="password" placeholder="Mot de passe (6 caractères minimum)" minlength="6" autocomplete="current-password" required>
+                <input id="auth-email" type="email" aria-label="Email" placeholder="Email" autocomplete="email" required>
+                <input id="auth-password" type="password" aria-label="Mot de passe" placeholder="Mot de passe (6 caractères minimum)" minlength="6" autocomplete="current-password" required>
                 <button type="submit">Se connecter</button>
                 <button id="register-button" type="button">Créer un compte</button>
             </form>
@@ -73,10 +78,11 @@
             <div id="pack-container" class="pack-container">
                 <div class="pack-placeholder">
                     <span class="pack-clip"></span>
-                    <p class="pack-label">ASHΛ // SERIES 01</p>
+                    <p class="pack-label">ASHΛ <span>VOL. 01</span></p>
+                    <span class="pack-side" aria-hidden="true">SOUND IS COLLECTIBLE // EST. UNDERGROUND</span>
                     <img class="pack-logo" src="asha-logo.png" alt="ASHΛ">
-                    <span class="pack-edition">UNDERGROUND PACK</span>
-                    <p class="pack-hint">Ouvre un pack</p>
+                    <span class="pack-edition">UNDER<br>GROUND<span>MUSIC COLLECTOR PACK</span></span>
+                    <div class="pack-footer"><span class="pack-barcode" aria-hidden="true"></span><span class="pack-hint">DÉCHIRE.<br>DÉCOUVRE.</span></div>
                 </div>
             </div>
 
@@ -84,7 +90,9 @@
                 OUVRIR UN BOOSTER
             </button>
 
-            <p id="status"></p>
+            <p id="status" role="status" aria-live="polite"></p>
+            <button id="reveal-all" class="secondary-button" type="button" hidden>Tout révéler</button>
+            <section id="pack-summary" class="pack-summary" aria-label="Ton dernier pack" hidden></section>
 
         </section>
 
@@ -99,6 +107,32 @@
                 </button>
             </div>
 
+            <div id="collection-stats" class="collection-stats" aria-live="polite"></div>
+            <section id="showcase" class="showcase" data-theme="gold" aria-label="Ma vitrine">
+                <div class="section-title"><h2>Ma vitrine</h2><label>Ambiance <select id="showcase-theme"><option value="gold">Or</option><option value="violet">Violet</option><option value="mint">Menthe</option></select></label></div>
+                <p class="album-hint">Expose jusqu’à 5 cartes. Ajoute-les depuis ta collection.</p>
+                <div id="showcase-cards" class="showcase-cards"></div>
+            </section>
+            <details class="artist-album" open>
+                <summary>Album de progression par artiste</summary>
+                <p class="album-hint">Complète chaque discographie disponible. Un titre compte une seule fois, même avec des doublons.</p>
+                <div id="artist-progress" class="artist-progress" aria-live="polite"></div>
+            </details>
+            <div class="collection-toolbar">
+                <label>Rechercher<input id="collection-search" type="search" placeholder="Un titre, un artiste…"></label>
+                <label>Rareté<select id="collection-rarity">
+                    <option value="">Toutes les raretés</option>
+                    <option value="commun">Commun</option><option value="rare">Rare</option>
+                    <option value="epique">Épique</option><option value="legendaire">Légendaire</option>
+                    <option value="special">Spécial</option><option value="exclu">Exclu</option>
+                </select></label>
+                <label>Trier par<select id="collection-sort">
+                    <option value="rarity">Rareté</option><option value="name">Titre A–Z</option>
+                    <option value="artist">Artiste A–Z</option><option value="quantity">Nombre d’exemplaires</option>
+                </select></label>
+            </div>
+            <p id="collection-count" class="collection-count" role="status"></p>
+            <label class="favorites-control"><input type="checkbox" id="favorites-only"> Mes favoris uniquement</label>
             <div id="collection-container" class="collection-container">
                 <p class="empty">
                     Aucune carte dans ta collection.
@@ -110,7 +144,9 @@
     </main>
 
 
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
     <script src="script.js"></script>
+    <script src="collection-features.js"></script>
 
 </body>
 </html>
