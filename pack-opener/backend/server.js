@@ -65,6 +65,7 @@ const ARTIST_NAMES = [
     'ezasha',
     'Lunias',
     'Ptite Soeur',
+    ''
 
 ];
 
