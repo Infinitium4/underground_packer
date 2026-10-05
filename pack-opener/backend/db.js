@@ -5,6 +5,12 @@ const database = new sqlite3.Database(process.env.DATABASE_PATH || path.join(__d
 
 const schema = [
     'PRAGMA foreign_keys = ON',
+    'CREATE TABLE IF NOT EXISTS daily_shop (date TEXT PRIMARY KEY, cards TEXT NOT NULL)',
+    `CREATE TABLE IF NOT EXISTS shop_purchases (
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        shop_date TEXT NOT NULL, card_id TEXT NOT NULL,
+        PRIMARY KEY (user_id, shop_date, card_id)
+    )`,
     `CREATE TABLE IF NOT EXISTS spotify_cache (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at INTEGER NOT NULL)`,
     `CREATE TABLE IF NOT EXISTS user_preferences (
         user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,

@@ -112,6 +112,9 @@ const rarityOrder = {
 let points = 0;
 let authToken = localStorage.getItem('asha-auth-token');
 let shopCards = [];
+let shopDate;
+let shopRefreshAt = 0;
+let shopRefreshTimer;
 let previewAudio;
 
 const views = {
@@ -147,7 +150,7 @@ const showView = (viewName) => {
         panel.classList.toggle('active', isActive);
     });
 
-    if (viewName === 'shop' && shopCards.length === 0) {
+    if (viewName === 'shop') {
         loadCardShop();
     }
 
@@ -205,6 +208,8 @@ const setLoggedOut = (message = 'Connecte-toi pour sauvegarder ta collection.') 
     collectionCards = [];
     artistCatalog = null;
     shopCards = [];
+    clearTimeout(shopRefreshTimer);
+    shopRefreshAt = 0;
     packSummary.hidden = true;
     packSummary.innerHTML = '';
     packContainer.innerHTML = buildPlaceholder();
@@ -283,7 +288,7 @@ const playLegendaryPreview = (card) => {
 
 const renderCardShop = () => {
     boosterShop.innerHTML = shopCards.map((card, index) => {
-        const price = 150 + (index % 5) * 100;
+        const price = card.price;
 
         return `
         <article class="booster-card card-shop-item" style="--delay: ${index * 55}ms">
@@ -297,8 +302,8 @@ const renderCardShop = () => {
                     <h3>${escapeHtml(card.name)}</h3>
                     <p>${escapeHtml(card.artist)} // carte artiste</p>
                 </div>
-                <button class="buy-booster" type="button" data-card-id="${escapeHtml(card.id)}" data-card-price="${price}">
-                    <span>ACHETER</span>
+                <button class="buy-booster" type="button" data-card-id="${escapeHtml(card.id)}" data-card-price="${price}" ${card.purchased ? 'disabled' : ''}>
+                    <span>${card.purchased ? 'DÉJÀ ACHETÉE' : 'ACHETER'}</span>
                     <strong>◆ ${formatPoints(price)}</strong>
                 </button>
             </div>
@@ -310,7 +315,7 @@ const renderCardShop = () => {
 const loadCardShop = async () => {
     const currentSession = sessionVersion;
     try {
-        const response = await apiFetch(`${API_URL}/api/cards`);
+        const response = await apiFetch(`${API_URL}/api/shop`);
         const data = await response.json();
 
         if (!response.ok || !data.success) {
@@ -318,11 +323,20 @@ const loadCardShop = async () => {
         }
 
         if (currentSession !== sessionVersion) return;
-        shopCards = data.cards.slice(0, 6);
+        shopCards = data.cards;
+        shopDate = data.date;
+        shopRefreshAt = Date.parse(data.refreshAt);
+        clearTimeout(shopRefreshTimer);
+        shopRefreshTimer = setTimeout(loadCardShop, Math.max(1000, shopRefreshAt - Date.now()));
+        document.querySelector('.shop-timer').textContent = 'RENOUVELLEMENT À MINUIT // HEURE DE PARIS';
         renderCardShop();
     } catch (error) {
         boosterShop.innerHTML = '<p class="empty">La boutique est indisponible pour le moment.</p>';
         console.error('Erreur boutique :', error);
+        if (currentSession === sessionVersion) {
+            clearTimeout(shopRefreshTimer);
+            shopRefreshTimer = setTimeout(loadCardShop, 60_000);
+        }
     }
 };
 
@@ -340,25 +354,33 @@ const buyCard = async (cardId, price, button) => {
         const response = await apiFetch(`${API_URL}/api/cards/purchase`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: cardId }),
+            body: JSON.stringify({ id: cardId, shopDate }),
         });
         const data = await response.json();
         if (currentSession !== sessionVersion) return;
 
         if (!response.ok || !data.success) {
+            if (response.status === 404 || response.status === 409) loadCardShop();
             throw new Error(data.error || 'Achat impossible');
         }
 
         points = data.points;
+        const offer = shopCards.find((card) => card.id === cardId);
+        if (offer) offer.purchased = true;
+        renderCardShop();
         updatePoints();
         notify(`${data.card.name} ajouté à ta collection.`);
         loadCollection();
     } catch (error) {
         notify(error.message);
     } finally {
-        button.disabled = false;
+        button.disabled = shopCards.some((card) => card.id === cardId && card.purchased);
     }
 };
+
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && shopCards.length && Date.now() >= shopRefreshAt) loadCardShop();
+});
 
 
 // =========================

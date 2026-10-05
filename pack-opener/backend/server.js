@@ -111,6 +111,7 @@ const SALE_PRICES = { commun: 25, rare: 40, 'épique': 60, 'légendaire': 80, 's
 // ==========================
 
 let cardPool = [];
+const getDailyShop = require('./daily-shop').createDailyShop(db, () => cardPool);
 
 // ==========================
 // SPOTIFY
@@ -815,33 +816,51 @@ app.post(
 // ACHETER UNE CARTE
 // ==========================
 
+app.get('/api/shop', async (req, res) => {
+    const shop = await getDailyShop();
+    res.set('Cache-Control', 'no-store');
+    if (!shop.cards.length) return res.status(503).json({ success: false, error: 'La boutique est en cours de chargement.' });
+    const token = req.get('Authorization')?.replace('Bearer ', '');
+    const session = token ? await db.get('SELECT user_id FROM sessions WHERE token = ?', [token]) : null;
+    const purchases = session ? await db.all('SELECT card_id FROM shop_purchases WHERE user_id = ? AND shop_date = ?', [session.user_id, shop.date]) : [];
+    const purchasedIds = new Set(purchases.map((purchase) => purchase.card_id));
+    res.json({ success: true, ...shop, cards: shop.cards.map((card) => ({ ...card, purchased: purchasedIds.has(card.id) })) });
+});
+
 app.post(
     '/api/cards/purchase',
     requireUser,
     async (req, res) => {
 
         const cardId = String(req.body?.id || '');
-        const track = cardPool.find((item) => String(item.id) === cardId);
+        const shop = await getDailyShop();
+        const card = shop.cards.find((item) => String(item.id) === cardId);
 
-        if (!track) {
+        if (!card || (req.body?.shopDate && req.body.shopDate !== shop.date)) {
             return res.status(404).json({
                 success: false,
-                error: 'Carte introuvable',
+                error: 'Cette offre a expiré. Actualise la boutique.',
             });
         }
 
-        const price = 150 + (cardPool.indexOf(track) % 5) * 100;
+        const price = card.price;
         const purchased = await db.transaction(async () => {
+            const existing = await db.get('SELECT 1 FROM shop_purchases WHERE user_id = ? AND shop_date = ? AND card_id = ?', [req.userId, shop.date, cardId]);
+            if (existing) return { alreadyPurchased: true };
             const debit = await db.run(
                 'UPDATE users SET points = points - ? WHERE id = ? AND points >= ?',
                 [price, req.userId, price]
             );
             if (!debit.changes) return null;
-            const cards = await savePackToCollection(req.userId, openPack([track], 1));
+            await db.run('INSERT INTO shop_purchases (user_id, shop_date, card_id) VALUES (?, ?, ?)', [req.userId, shop.date, cardId]);
+            const cards = await savePackToCollection(req.userId, [{ ...card, rarity: pickRarity() }]);
             const user = await db.get('SELECT points FROM users WHERE id = ?', [req.userId]);
             return { card: cards[0], points: user.points };
         });
 
+        if (purchased?.alreadyPurchased) {
+            return res.status(409).json({ success: false, error: 'Tu as déjà acheté cette carte dans la boutique du jour.' });
+        }
         if (!purchased) {
             return res.status(400).json({
                 success: false,

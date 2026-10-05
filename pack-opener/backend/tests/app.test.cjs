@@ -49,14 +49,22 @@ test('accounts, persisted packs and simultaneous purchases', async (t) => {
     const collection = await request('/api/collection', null, token);
     assert.equal(collection.collection.reduce((sum, card) => sum + card.quantity, 0), pack.pack.length);
     const catalog = await request('/api/cards');
-    const purchases = await Promise.all(Array.from({ length: 12 }, () => request('/api/cards/purchase', { id: catalog.cards[0].id }, token)));
-    assert.equal(purchases.filter((result) => result.status === 200).length, 8);
-    assert.equal(purchases.filter((result) => result.status === 400).length, 4);
+    const shop = await request('/api/shop');
+    assert.equal(shop.cards.length, 6);
+    assert.deepEqual((await request('/api/shop')).cards, shop.cards);
+    const unavailable = catalog.cards.find((card) => !shop.cards.some((offer) => offer.id === card.id));
+    assert.equal((await request('/api/cards/purchase', { id: unavailable.id }, token)).status, 404);
+    assert.equal((await request('/api/cards/purchase', { id: shop.cards[0].id, shopDate: 'expired' }, token)).status, 404);
+    const purchases = await Promise.all(Array.from({ length: 12 }, () => request('/api/cards/purchase', { id: shop.cards[0].id }, token)));
+    assert.equal(purchases.filter((result) => result.status === 200).length, 1);
+    assert.equal(purchases.filter((result) => result.status === 409).length, 11);
+    assert.equal((await request('/api/shop', null, token)).cards[0].purchased, true);
+    assert.equal((await request('/api/shop')).cards[0].purchased, false);
     const me = await request('/api/auth/me', null, token);
-    assert.equal(me.user.points, 0);
+    assert.equal(me.user.points, 1050);
     const updated = await request('/api/collection', null, token);
-    assert.equal(updated.collection.reduce((sum, card) => sum + card.quantity, 0), pack.pack.length + 8);
-    const first = updated.collection[0];
+    assert.equal(updated.collection.reduce((sum, card) => sum + card.quantity, 0), pack.pack.length + 1);
+    const first = updated.collection.find((card) => card.id === shop.cards[0].id);
     const setPreferences = async (body, session = token) => fetch(`${base}/api/preferences`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session}` }, body: JSON.stringify(body),
     });
@@ -86,8 +94,10 @@ test('accounts, persisted packs and simultaneous purchases', async (t) => {
     const sales = await Promise.all(Array.from({ length: beforeSale.quantity + 2 }, () => request('/api/cards/sell', { id: first.id, price: 999999 }, token)));
     assert.equal(sales.filter((sale) => sale.status === 200).length, beforeSale.quantity);
     assert.equal(sales.filter((sale) => sale.status === 404).length, 2);
-    assert.equal((await request('/api/auth/me', null, token)).user.points, beforeSale.quantity * beforeSale.salePrice);
+    assert.equal((await request('/api/auth/me', null, token)).user.points, 1050 + beforeSale.quantity * beforeSale.salePrice);
     assert.ok(!(await request('/api/collection', null, token)).collection.some((card) => card.id === first.id));
+    assert.equal((await request('/api/cards/purchase', { id: first.id }, token)).status, 409);
+    assert.equal((await request('/api/cards/purchase', { id: first.id }, other.token)).status, 200);
     const cleaned = await request('/api/preferences', null, token);
     assert.deepEqual(cleaned.favorites, []);
     assert.deepEqual(cleaned.showcase, []);

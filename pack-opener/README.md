@@ -32,6 +32,8 @@ En cas de réponse 429, le serveur respecte `Retry-After` et conserve ce délai 
 - L’album de progression indique, pour chaque artiste du catalogue chargé, le nombre de titres uniques possédés et ceux restant à découvrir. Les doublons ne modifient pas le pourcentage ; un album terminé reçoit la mention **COMPLET**.
 - Les cartes légendaires et spéciales déclenchent une cinématique plein écran de 3,6 secondes, avec deux mises en scène distinctes. Utilise **Passer l’animation** ou Échap pour revenir immédiatement à la carte. Le mode système de réduction des mouvements conserve une révélation simple.
 - La boutique conserve les prix existants et confirme les achats par notification.
+- Chaque carte de la boutique du jour ne peut être achetée qu’une fois par joueur. Le bouton affiche « DÉJÀ ACHETÉE », y compris après rechargement ; revendre la carte ne permet pas de racheter la même offre.
+- La boutique propose jusqu’à six cartes communes à tous les joueurs, renouvelées à minuit (Europe/Paris). Les offres et leurs prix sont conservés en base pendant la journée, même après un redémarrage. Les titres absents de la sélection précédente sont prioritaires ; la page actualise automatiquement les offres à minuit.
 - Les comptes et cartes sont conservés dans `backend/pack-opener.sqlite`. Les ouvertures restent gratuites et les nouveaux comptes reçoivent les 1 200 points prévus par le projet.
 
 ## Vérifications
