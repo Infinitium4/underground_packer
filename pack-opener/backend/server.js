@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 
 const express = require('express');
 const cors = require('cors');
@@ -6,6 +6,8 @@ const path = require('path');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const db = require('./db');
+const { createSpotifyClient, CACHE_TTL } = require('./spotify-client');
+const spotify = createSpotifyClient(db);
 
 const app = express();
 
@@ -102,19 +104,21 @@ const RARITY_WEIGHTS = [
 ];
 
 const PACK_SIZE = 5;
+const SALE_PRICES = { commun: 25, rare: 40, 'épique': 60, 'légendaire': 80, 'spécial': 100, exclu: 120 };
 
 // ==========================
 // POOL DE CARTES
 // ==========================
 
 let cardPool = [];
+const getDailyShop = require('./daily-shop').createDailyShop(db, () => cardPool);
 
 // ==========================
 // SPOTIFY
 // ==========================
 
 const getToken = async () => {
-    const res = await fetch(
+    const res = await spotify.request(
         'https://accounts.spotify.com/api/token',
         {
             method: 'POST',
@@ -193,7 +197,7 @@ const searchArtistTracks = async (
             `&limit=${limit}` +
             `&offset=${offset}`;
 
-        const res = await fetch(
+        const res = await spotify.request(
             url,
             {
                 headers: {
@@ -332,11 +336,11 @@ const openPack = (
     }
 
     // Mélange du pool
-    const shuffled =
-        [...pool].sort(
-            () =>
-                Math.random() - 0.5
-        );
+    const shuffled = [...pool];
+    for (let index = shuffled.length - 1; index > 0; index -= 1) {
+        const selected = crypto.randomInt(index + 1);
+        [shuffled[index], shuffled[selected]] = [shuffled[selected], shuffled[index]];
+    }
 
     // Sélection des cartes
     const picked =
@@ -421,7 +425,9 @@ const saveCardAndCollect = async (userId, card) => {
 };
 
 const savePackToCollection = async (userId, pack) => {
-    return Promise.all(pack.map((card) => saveCardAndCollect(userId, card)));
+    const saved = [];
+    for (const card of pack) saved.push(await saveCardAndCollect(userId, card));
+    return saved;
 };
 
 // ==========================
@@ -440,10 +446,7 @@ const buildCardPool =
 
         const allTracks = [];
 
-        for (
-            const artistName
-            of ARTIST_NAMES
-        ) {
+        for (const artistName of ARTIST_NAMES.filter((name) => name.trim())) {
 
             console.log(
                 `\n🔎 Recherche des morceaux de ${artistName}...`
@@ -469,7 +472,7 @@ const buildCardPool =
         // SUPPRESSION DES DOUBLONS
         // ==========================
 
-        cardPool = [
+        const updatedPool = [
             ...new Map(
                 allTracks.map(
                     (track) => [
@@ -479,6 +482,9 @@ const buildCardPool =
                 )
             ).values(),
         ];
+        if (!updatedPool.length) throw new Error('Catalogue Spotify vide ; catalogue local conservé');
+        cardPool = updatedPool;
+        await spotify.write('catalog', cardPool);
 
         console.log(
             `\n🎵 Pool total : ${cardPool.length} cartes`
@@ -514,7 +520,7 @@ app.post('/api/auth/register', async (req, res) => {
     const email = String(req.body?.email || '').trim().toLowerCase();
     const password = String(req.body?.password || '');
 
-    if (!email || password.length < 6) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 6) {
         return res.status(400).json({
             success: false,
             error: 'Indique un email et un mot de passe de 6 caractères minimum',
@@ -564,6 +570,35 @@ app.post('/api/auth/logout', requireUser, (req, res) => {
     db.run('DELETE FROM sessions WHERE token = ?', [req.sessionToken])
         .then(() => res.json({ success: true }))
         .catch(() => res.status(500).json({ success: false, error: 'Déconnexion impossible' }));
+});
+
+app.get('/api/preferences', requireUser, async (req, res) => {
+    const row = await db.get('SELECT * FROM user_preferences WHERE user_id = ?', [req.userId]);
+    res.json({ success: true, favorites: JSON.parse(row?.favorites || '[]'), showcase: JSON.parse(row?.showcase || '[]'), theme: row?.theme || 'gold' });
+});
+
+app.put('/api/preferences', requireUser, async (req, res) => {
+    const { favorites, showcase, theme } = req.body || {};
+    if (![favorites, showcase].every((list) => Array.isArray(list) && list.length <= 10000 && list.every((id) => typeof id === 'string') && new Set(list).size === list.length)
+        || showcase.length > 5 || !['gold', 'violet', 'mint'].includes(theme)) {
+        return res.status(400).json({ success: false, error: 'Sélection invalide (5 cartes maximum dans la vitrine).' });
+    }
+    const owned = await db.all('SELECT s.spotify_id AS id FROM collection_items c JOIN sounds s ON s.id = c.sound_id WHERE c.user_id = ?', [req.userId]);
+    const ids = new Set(owned.map((card) => card.id));
+    if ([...favorites, ...showcase].some((id) => !ids.has(id))) return res.status(400).json({ success: false, error: 'Choisis des cartes de ta collection.' });
+    await db.run(`INSERT INTO user_preferences (user_id, favorites, showcase, theme) VALUES (?, ?, ?, ?)
+        ON CONFLICT(user_id) DO UPDATE SET favorites=excluded.favorites, showcase=excluded.showcase, theme=excluded.theme`,
+        [req.userId, JSON.stringify(favorites), JSON.stringify(showcase), theme]);
+    res.json({ success: true, favorites, showcase, theme });
+});
+
+app.get('/api/cards/:id/details', requireUser, async (req, res) => {
+    const card = await db.get(`SELECT s.name, s.artist, s.cover_url AS cover, s.spotify_url AS spotifyUrl, s.preview_url AS previewUrl,
+        v.rarity, c.quantity FROM collection_items c JOIN sounds s ON s.id=c.sound_id JOIN sound_variants v ON v.id=c.variant_id
+        WHERE c.user_id=? AND s.spotify_id=?`, [req.userId, req.params.id]);
+    if (!card) return res.status(404).json({ success: false, error: 'Carte introuvable dans ta collection.' });
+    const track = cardPool.find((track) => track.id === req.params.id);
+    res.json({ success: true, card: { ...card, id: req.params.id, album: track?.album?.name || null, releaseDate: track?.album?.release_date || null, durationMs: track?.duration_ms || null } });
 });
 
 // ==========================
@@ -750,7 +785,7 @@ app.post(
 
             // Ajouter les cartes
             // à la collection
-            const savedPack = await savePackToCollection(req.userId, pack);
+            const savedPack = await db.transaction(() => savePackToCollection(req.userId, pack));
 
             res.json({
 
@@ -781,41 +816,61 @@ app.post(
 // ACHETER UNE CARTE
 // ==========================
 
+app.get('/api/shop', async (req, res) => {
+    const shop = await getDailyShop();
+    res.set('Cache-Control', 'no-store');
+    if (!shop.cards.length) return res.status(503).json({ success: false, error: 'La boutique est en cours de chargement.' });
+    const token = req.get('Authorization')?.replace('Bearer ', '');
+    const session = token ? await db.get('SELECT user_id FROM sessions WHERE token = ?', [token]) : null;
+    const purchases = session ? await db.all('SELECT card_id FROM shop_purchases WHERE user_id = ? AND shop_date = ?', [session.user_id, shop.date]) : [];
+    const purchasedIds = new Set(purchases.map((purchase) => purchase.card_id));
+    res.json({ success: true, ...shop, cards: shop.cards.map((card) => ({ ...card, purchased: purchasedIds.has(card.id) })) });
+});
+
 app.post(
     '/api/cards/purchase',
     requireUser,
     async (req, res) => {
 
         const cardId = String(req.body?.id || '');
-        const track = cardPool.find((item) => String(item.id) === cardId);
+        const shop = await getDailyShop();
+        const card = shop.cards.find((item) => String(item.id) === cardId);
 
-        if (!track) {
+        if (!card || (req.body?.shopDate && req.body.shopDate !== shop.date)) {
             return res.status(404).json({
                 success: false,
-                error: 'Carte introuvable',
+                error: 'Cette offre a expiré. Actualise la boutique.',
             });
         }
 
-        const price = 150 + (cardPool.indexOf(track) % 5) * 100;
-        const user = await db.get('SELECT points FROM users WHERE id = ?', [req.userId]);
+        const price = card.price;
+        const purchased = await db.transaction(async () => {
+            const existing = await db.get('SELECT 1 FROM shop_purchases WHERE user_id = ? AND shop_date = ? AND card_id = ?', [req.userId, shop.date, cardId]);
+            if (existing) return { alreadyPurchased: true };
+            const debit = await db.run(
+                'UPDATE users SET points = points - ? WHERE id = ? AND points >= ?',
+                [price, req.userId, price]
+            );
+            if (!debit.changes) return null;
+            await db.run('INSERT INTO shop_purchases (user_id, shop_date, card_id) VALUES (?, ?, ?)', [req.userId, shop.date, cardId]);
+            const cards = await savePackToCollection(req.userId, [{ ...card, rarity: pickRarity() }]);
+            const user = await db.get('SELECT points FROM users WHERE id = ?', [req.userId]);
+            return { card: cards[0], points: user.points };
+        });
 
-        if (user.points < price) {
+        if (purchased?.alreadyPurchased) {
+            return res.status(409).json({ success: false, error: 'Tu as déjà acheté cette carte dans la boutique du jour.' });
+        }
+        if (!purchased) {
             return res.status(400).json({
                 success: false,
                 error: 'Pas assez de points pour cette carte',
             });
         }
 
-        const card = (await db.transaction(async () => {
-            await db.run('UPDATE users SET points = points - ? WHERE id = ?', [price, req.userId]);
-            return savePackToCollection(req.userId, openPack([track], 1));
-        }))[0];
-        const updatedUser = await db.get('SELECT points FROM users WHERE id = ?', [req.userId]);
-
         return res.json({
             success: true,
-            card,
-            points: updatedUser.points,
+            ...purchased,
         });
     }
 );
@@ -823,6 +878,34 @@ app.post(
 // ==========================
 // COLLECTION
 // ==========================
+
+app.post('/api/cards/sell', requireUser, async (req, res) => {
+    const id = req.body?.id;
+    if (typeof id !== 'string' || !id) return res.status(400).json({ success: false, error: 'Carte invalide.' });
+    const sale = await db.transaction(async () => {
+        const card = await db.get(`SELECT c.sound_id, c.quantity, s.name, v.rarity FROM collection_items c
+            JOIN sounds s ON s.id=c.sound_id JOIN sound_variants v ON v.id=c.variant_id
+            WHERE c.user_id=? AND s.spotify_id=?`, [req.userId, id]);
+        if (!card || card.quantity < 1) return null;
+        const earned = SALE_PRICES[card.rarity];
+        if (!earned) throw new Error('Prix de vente inconnu');
+        if (card.quantity > 1) {
+            await db.run('UPDATE collection_items SET quantity=quantity-1 WHERE user_id=? AND sound_id=?', [req.userId, card.sound_id]);
+        } else {
+            await db.run('DELETE FROM collection_items WHERE user_id=? AND sound_id=?', [req.userId, card.sound_id]);
+            const prefs = await db.get('SELECT favorites, showcase FROM user_preferences WHERE user_id=?', [req.userId]);
+            if (prefs) await db.run('UPDATE user_preferences SET favorites=?, showcase=? WHERE user_id=?', [
+                JSON.stringify(JSON.parse(prefs.favorites).filter((item) => item !== id)),
+                JSON.stringify(JSON.parse(prefs.showcase).filter((item) => item !== id)), req.userId,
+            ]);
+        }
+        await db.run('UPDATE users SET points=points+? WHERE id=?', [earned, req.userId]);
+        const user = await db.get('SELECT points FROM users WHERE id=?', [req.userId]);
+        return { id, name: card.name, earned, quantity: card.quantity - 1, points: user.points };
+    });
+    if (!sale) return res.status(404).json({ success: false, error: 'Tu ne possèdes plus cette carte.' });
+    res.json({ success: true, ...sale });
+});
 
 app.get(
     '/api/collection',
@@ -844,7 +927,7 @@ app.get(
         res.json({
             success: true,
             count: collection.length,
-            collection,
+            collection: collection.map((card) => ({ ...card, salePrice: SALE_PRICES[card.rarity] || 0 })),
         });
     }
 );
@@ -853,14 +936,34 @@ app.get(
 // DÉMARRAGE DU SERVEUR
 // ==========================
 
+app.use((error, req, res, next) => {
+    console.error('Erreur API :', error.message);
+    res.status(error.status === 400 ? 400 : 500).json({
+        success: false,
+        error: error.status === 400 ? 'Requête invalide' : 'Une erreur est survenue. Réessaie dans un instant.',
+    });
+});
+
 const startServer =
     async () => {
 
         try {
 
-            // Charger Spotify
-            // avant de démarrer l'API
-            await buildCardPool();
+            // L'interface et les collections restent accessibles pendant le chargement Spotify.
+            await db.get('SELECT 1');
+            const cachedCatalog = await spotify.read('catalog');
+            if (Array.isArray(cachedCatalog?.value) && cachedCatalog.value.length) {
+                cardPool = cachedCatalog.value.filter((track) => track.artists?.some((artist) => ARTIST_NAMES.includes(artist.name)));
+            } else {
+                // Keep existing music playable when Spotify is temporarily unavailable.
+                const saved = await db.all('SELECT * FROM sounds');
+                cardPool = saved.filter((sound) => ARTIST_NAMES.includes(sound.artist)).map((sound) => ({
+                    id: sound.spotify_id, name: sound.name, artists: [{ name: sound.artist }],
+                    album: { images: sound.cover_url ? [{ url: sound.cover_url }] : [] },
+                    external_urls: { spotify: sound.spotify_url }, preview_url: sound.preview_url,
+                }));
+            }
+            if (cardPool.length) console.log(`Catalogue local disponible : ${cardPool.length} titres`);
 
             app.listen(
                 PORT,
@@ -891,6 +994,25 @@ const startServer =
                     );
                 }
             );
+
+            let failures = 0;
+            const scheduleCatalog = (delay) => setTimeout(loadCatalog, Math.min(delay, 2_147_483_647)).unref();
+            const loadCatalog = async () => {
+                try {
+                    await buildCardPool();
+                    if (!cardPool.length) throw new Error('Catalogue Spotify vide');
+                    failures = 0;
+                    scheduleCatalog(CACHE_TTL);
+                } catch (error) {
+                    failures += 1;
+                    const delay = error.retryAt ? Math.max(1000, error.retryAt - Date.now()) : Math.min(3600000, 60000 * 2 ** Math.min(failures - 1, 6));
+                    console.error(`Actualisation Spotify suspendue. Nouvel essai dans ${Math.ceil(delay / 60000)} minute(s). ${cardPool.length} titres locaux disponibles.`, error.message);
+                    scheduleCatalog(delay);
+                }
+            };
+            if (cachedCatalog?.value?.length && Date.now() - cachedCatalog.updatedAt < CACHE_TTL) {
+                scheduleCatalog(CACHE_TTL - (Date.now() - cachedCatalog.updatedAt));
+            } else void loadCatalog();
 
         } catch (error) {
 
